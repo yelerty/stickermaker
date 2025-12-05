@@ -25,12 +25,15 @@ class VideoToGIFViewModel: ObservableObject {
     @Published var frameRate: Int = 10
     @Published var frameDelay: Double = 0.1 // 프레임 간 딜레이 (초)
     @Published var isProcessing = false
+    @Published var processingProgress: Double = 0.0
+    @Published var processingMessage: String = ""
     @Published var generatedGIFURL: URL?
     @Published var errorMessage: String?
     @Published var removeBackground = false
     @Published var thumbnailImage: UIImage?
 
     private var asset: AVAsset?
+    private var isCancelled = false
 
     func loadVideo() async {
         guard let videoItem = selectedVideoItem else { return }
@@ -91,20 +94,42 @@ class VideoToGIFViewModel: ObservableObject {
             return
         }
 
+        isCancelled = false
         isProcessing = true
+        processingProgress = 0.0
 
         Task {
             do {
+                await updateProgress(0.1, "프레임 추출 중...")
                 let frames = try await extractFrames(from: asset, start: startTime, end: endTime)
+
+                if isCancelled {
+                    await cancelProcessing()
+                    return
+                }
 
                 var processedFrames = frames
                 if removeBackground {
+                    await updateProgress(0.3, "배경 제거 중...")
                     processedFrames = try await removeBackgroundFromFrames(frames)
+
+                    if isCancelled {
+                        await cancelProcessing()
+                        return
+                    }
                 }
 
+                await updateProgress(0.8, "GIF 생성 중...")
                 let gifURL = try await generateGIF(from: processedFrames)
 
+                if isCancelled {
+                    await cancelProcessing()
+                    return
+                }
+
                 await MainActor.run {
+                    self.processingProgress = 1.0
+                    self.processingMessage = "완료!"
                     self.generatedGIFURL = gifURL
                     self.isProcessing = false
                 }
@@ -112,8 +137,30 @@ class VideoToGIFViewModel: ObservableObject {
                 await MainActor.run {
                     self.errorMessage = "GIF 생성 실패: \(error.localizedDescription)"
                     self.isProcessing = false
+                    self.processingProgress = 0.0
+                    self.processingMessage = ""
                 }
             }
+        }
+    }
+
+    func cancelGIFCreation() {
+        isCancelled = true
+    }
+
+    private func updateProgress(_ progress: Double, _ message: String) async {
+        await MainActor.run {
+            self.processingProgress = progress
+            self.processingMessage = message
+        }
+    }
+
+    private func cancelProcessing() async {
+        await MainActor.run {
+            self.isProcessing = false
+            self.processingProgress = 0.0
+            self.processingMessage = ""
+            self.errorMessage = "작업이 취소되었습니다."
         }
     }
 
@@ -145,7 +192,14 @@ class VideoToGIFViewModel: ObservableObject {
     private func removeBackgroundFromFrames(_ frames: [UIImage]) async throws -> [UIImage] {
         var processedFrames: [UIImage] = []
 
-        for frame in frames {
+        for (index, frame) in frames.enumerated() {
+            if isCancelled {
+                throw NSError(domain: "VideoToGIF", code: 999, userInfo: [NSLocalizedDescriptionKey: "취소됨"])
+            }
+
+            let progress = 0.3 + (Double(index + 1) / Double(frames.count)) * 0.4 // 30% ~ 70%
+            await updateProgress(progress, "배경 제거 중 (\(index + 1)/\(frames.count))...")
+
             let processed = try await removeBackground(from: frame)
             processedFrames.append(processed)
         }
@@ -343,13 +397,44 @@ struct VideoToGIFView: View {
                         }
                     }
                 } else if viewModel.isProcessing {
-                    VStack(spacing: 20) {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                        Text(viewModel.videoURL == nil ? "비디오 로딩 중..." : "GIF 생성 중...")
-                            .font(.headline)
+                    VStack(spacing: 30) {
+                        VStack(spacing: 15) {
+                            ProgressView(value: viewModel.processingProgress, total: 1.0)
+                                .progressViewStyle(LinearProgressViewStyle(tint: Color.appPrimary))
+                                .scaleEffect(x: 1, y: 2, anchor: .center)
+                                .frame(maxWidth: 300)
+
+                            Text("\(Int(viewModel.processingProgress * 100))%")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.appPrimary)
+                        }
+
+                        VStack(spacing: 10) {
+                            if !viewModel.processingMessage.isEmpty {
+                                Text(viewModel.processingMessage)
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                            }
+
+                            Text(viewModel.videoURL == nil ? "비디오 로딩 중..." : "잠시만 기다려주세요...")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Button(action: {
+                            viewModel.cancelGIFCreation()
+                        }) {
+                            HStack {
+                                Image(systemName: "xmark.circle.fill")
+                                Text("취소")
+                            }
+                            .frame(width: 200)
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
                     }
                     .frame(maxHeight: .infinity)
+                    .padding()
                 } else if viewModel.videoURL != nil {
                     // 비디오 편집 화면
                     ScrollView {
