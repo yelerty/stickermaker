@@ -1,0 +1,215 @@
+//
+//  ImprovedContentView.swift
+//  stickermaker
+//
+//  Created by jihong on 12/4/25.
+//
+
+import SwiftUI
+import PhotosUI
+
+struct ImprovedStickerMakerTab: View {
+    @StateObject private var viewModel = StickerViewModel()
+    @State private var showSaveAlert = false
+    @State private var showingEditor = false
+
+    var body: some View {
+        NavigationStack {
+            GeometryReader { geometry in
+                let isLandscape = geometry.size.width > geometry.size.height
+
+                ScrollView(showsIndicators: false) {
+                    if let processedImage = viewModel.processedImage {
+                        if isLandscape {
+                            landscapePreview(image: processedImage, geometry: geometry)
+                        } else {
+                            portraitPreview(image: processedImage)
+                        }
+                    } else if viewModel.isProcessing {
+                        processingView
+                    } else {
+                        emptyStateView
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .background(Color.appBackground.ignoresSafeArea())
+            .navigationTitle("Sticker Maker")
+            .navigationBarTitleDisplayMode(.inline)
+            .alert("저장 완료", isPresented: $showSaveAlert) {
+                Button("확인", role: .cancel) { }
+            } message: {
+                Text("스티커가 사진 라이브러리에 저장되었습니다.")
+            }
+            .sheet(isPresented: $showingEditor) {
+                ImageEditorView(viewModel: viewModel)
+            }
+        }
+        .onChange(of: viewModel.selectedPhotoItem) { oldValue, newValue in
+            Task {
+                await viewModel.loadImage()
+            }
+        }
+    }
+
+    func portraitPreview(image: UIImage) -> some View {
+        VStack(spacing: Spacing.lg) {
+            CardView {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxHeight: 400)
+                    .background(CheckerboardView())
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+                    .padding(Spacing.md)
+            }
+            .padding(.horizontal, Spacing.md)
+
+            actionButtons
+                .padding(.horizontal, Spacing.md)
+
+            if let errorMessage = viewModel.errorMessage {
+                errorView(errorMessage)
+            }
+        }
+        .padding(.vertical, Spacing.md)
+    }
+
+    func landscapePreview(image: UIImage, geometry: GeometryProxy) -> some View {
+        HStack(spacing: Spacing.lg) {
+            // 왼쪽: 이미지 미리보기
+            CardView {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .background(CheckerboardView())
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+                    .padding(Spacing.md)
+            }
+            .frame(width: geometry.size.width * 0.55)
+
+            // 오른쪽: 액션 버튼들
+            VStack(spacing: Spacing.lg) {
+                Spacer()
+                actionButtons
+                Spacer()
+
+                if let errorMessage = viewModel.errorMessage {
+                    errorView(errorMessage)
+                }
+            }
+            .frame(width: geometry.size.width * 0.40)
+        }
+        .padding(Spacing.lg)
+    }
+
+    var actionButtons: some View {
+        VStack(spacing: Spacing.md) {
+            Button(action: {
+                showingEditor = true
+            }) {
+                HStack {
+                    Image(systemName: "slider.horizontal.3")
+                    Text("편집하기")
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(SecondaryButtonStyle())
+
+            HStack(spacing: Spacing.md) {
+                Button(action: {
+                    Task {
+                        await viewModel.saveSticker()
+                        if viewModel.errorMessage == nil {
+                            showSaveAlert = true
+                        }
+                    }
+                }) {
+                    if viewModel.isSaving {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        HStack {
+                            Image(systemName: "arrow.down.circle.fill")
+                            Text("저장")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(viewModel.isSaving)
+
+                Button(action: {
+                    viewModel.reset()
+                }) {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .frame(width: 50)
+            }
+        }
+    }
+
+    var processingView: some View {
+        VStack(spacing: Spacing.xl) {
+            ProgressView()
+                .scaleEffect(1.5)
+                .tint(Color.appPrimary)
+
+            Text("배경 제거 중...")
+                .font(.appHeadline)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxHeight: .infinity)
+        .padding(Spacing.xxl)
+    }
+
+    var emptyStateView: some View {
+        VStack(spacing: Spacing.xl) {
+            EmptyStateView(
+                icon: "photo.badge.plus",
+                title: "스티커 만들기",
+                message: "사진을 선택하면 자동으로\n배경이 제거됩니다"
+            )
+
+            PhotosPicker(
+                selection: $viewModel.selectedPhotoItem,
+                matching: .images
+            ) {
+                HStack {
+                    Image(systemName: "photo.on.rectangle.angled")
+                    Text("사진 선택")
+                }
+                .frame(maxWidth: 300)
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .controlSize(.large)
+        }
+        .padding(Spacing.xxl)
+    }
+
+    func errorView(_ message: String) -> some View {
+        Text(message)
+            .font(.appCaption)
+            .foregroundColor(.red)
+            .padding(Spacing.md)
+            .background(Color.red.opacity(0.1))
+            .cornerRadius(CornerRadius.sm)
+    }
+}
+
+struct EnhancedStickerPreviewView: View {
+    let image: UIImage
+
+    var body: some View {
+        CardView {
+            Image(uiImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(maxHeight: 400)
+                .background(CheckerboardView())
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+                .padding(Spacing.md)
+        }
+    }
+}

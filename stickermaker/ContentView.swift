@@ -13,7 +13,7 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            StickerMakerTab()
+            ImprovedStickerMakerTab()
                 .tabItem {
                     Label("스티커", systemImage: "photo.badge.plus")
                 }
