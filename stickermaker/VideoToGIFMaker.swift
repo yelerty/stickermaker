@@ -16,6 +16,32 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 import Combine
 
+enum AspectRatio: String, CaseIterable, Identifiable {
+    case original = "원본"
+    case square = "정방형 (1:1)"
+    case vertical_9_16 = "9:16"
+    case vertical_4_5 = "4:5"
+    case vertical_5_7 = "5:7"
+    case vertical_3_4 = "3:4"
+    case vertical_3_5 = "3:5"
+    case vertical_2_3 = "2:3"
+
+    var id: String { rawValue }
+
+    var ratio: CGFloat? {
+        switch self {
+        case .original: return nil
+        case .square: return 1.0
+        case .vertical_9_16: return 9.0 / 16.0
+        case .vertical_4_5: return 4.0 / 5.0
+        case .vertical_5_7: return 5.0 / 7.0
+        case .vertical_3_4: return 3.0 / 4.0
+        case .vertical_3_5: return 3.0 / 5.0
+        case .vertical_2_3: return 2.0 / 3.0
+        }
+    }
+}
+
 class VideoToGIFViewModel: ObservableObject {
     @Published var selectedVideoItem: PhotosPickerItem?
     @Published var videoURL: URL?
@@ -31,8 +57,7 @@ class VideoToGIFViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var removeBackground = false
     @Published var thumbnailImage: UIImage?
-    @Published var cropScale: Double = 1.0 // 1.0 = 원본, 0.5 = 50% 크기
-    @Published var enableCrop = false
+    @Published var aspectRatio: AspectRatio = .original
 
     private var asset: AVAsset?
     private var isCancelled = false
@@ -184,9 +209,9 @@ class VideoToGIFViewModel: ObservableObject {
                 let cgImage = try imageGenerator.copyCGImage(at: time, actualTime: nil)
                 var image = UIImage(cgImage: cgImage)
 
-                // 크롭이 활성화된 경우 이미지 크롭/리사이즈
-                if enableCrop && cropScale < 1.0 {
-                    image = cropImage(image, scale: cropScale)
+                // 비율에 맞게 이미지 크롭
+                if aspectRatio != .original {
+                    image = cropToAspectRatio(image, aspectRatio: aspectRatio)
                 }
 
                 frames.append(image)
@@ -198,16 +223,28 @@ class VideoToGIFViewModel: ObservableObject {
         return frames
     }
 
-    private func cropImage(_ image: UIImage, scale: Double) -> UIImage {
-        guard let cgImage = image.cgImage else { return image }
+    private func cropToAspectRatio(_ image: UIImage, aspectRatio: AspectRatio) -> UIImage {
+        guard let cgImage = image.cgImage,
+              let targetRatio = aspectRatio.ratio else { return image }
 
         let originalWidth = CGFloat(cgImage.width)
         let originalHeight = CGFloat(cgImage.height)
+        let originalRatio = originalWidth / originalHeight
+
+        var newWidth: CGFloat
+        var newHeight: CGFloat
+
+        if targetRatio < originalRatio {
+            // 타겟 비율이 더 좁음 (세로로 긴 경우) - 높이 기준
+            newHeight = originalHeight
+            newWidth = originalHeight * targetRatio
+        } else {
+            // 타겟 비율이 더 넓음 - 너비 기준
+            newWidth = originalWidth
+            newHeight = originalWidth / targetRatio
+        }
 
         // 중앙을 기준으로 크롭
-        let newWidth = originalWidth * scale
-        let newHeight = originalHeight * scale
-
         let x = (originalWidth - newWidth) / 2
         let y = (originalHeight - newHeight) / 2
 
@@ -582,36 +619,23 @@ struct VideoToGIFView: View {
 
                                 Divider()
 
-                                // 프레임 크롭
-                                Toggle(isOn: $viewModel.enableCrop) {
+                                // 프레임 비율
+                                VStack(alignment: .leading, spacing: 8) {
                                     HStack(spacing: 8) {
-                                        Image(systemName: "crop")
+                                        Image(systemName: "aspectratio")
                                             .foregroundStyle(.tint)
-                                        Text("프레임 크롭")
+                                        Text("프레임 비율")
                                             .font(.subheadline)
                                             .fontWeight(.medium)
                                     }
-                                }
-                                .toggleStyle(SwitchToggleStyle(tint: .accentColor))
 
-                                if viewModel.enableCrop {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        HStack {
-                                            Text("크기")
-                                                .font(.subheadline)
-                                            Spacer()
-                                            Text("\(Int(viewModel.cropScale * 100))%")
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                                .padding(.horizontal, 8)
-                                                .padding(.vertical, 4)
-                                                .background(Color.appPrimary.opacity(0.1))
-                                                .cornerRadius(6)
+                                    Picker("프레임 비율", selection: $viewModel.aspectRatio) {
+                                        ForEach(AspectRatio.allCases) { ratio in
+                                            Text(ratio.rawValue).tag(ratio)
                                         }
-
-                                        Slider(value: $viewModel.cropScale, in: 0.3...1.0, step: 0.05)
-                                            .tint(Color.appPrimary)
                                     }
+                                    .pickerStyle(.menu)
+                                    .tint(Color.appPrimary)
                                 }
 
                                 Divider()
