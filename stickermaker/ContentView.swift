@@ -31,11 +31,17 @@ struct ContentView: View {
                 }
                 .tag(2)
 
+            BackgroundCompositorView()
+                .tabItem {
+                    Label("배경 합성", systemImage: "rectangle.on.rectangle")
+                }
+                .tag(3)
+
             StickerPackView()
                 .tabItem {
                     Label("스티커팩", systemImage: "square.grid.3x3")
                 }
-                .tag(3)
+                .tag(4)
         }
     }
 }

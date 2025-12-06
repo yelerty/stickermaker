@@ -669,7 +669,7 @@ struct VideoToGIFView: View {
                                 Slider(value: Binding(
                                     get: { Double(viewModel.frameRate) },
                                     set: { viewModel.frameRate = Int($0) }
-                                ), in: 5...60, step: 1)
+                                ), in: 5...45, step: 1)
 
                                 Divider()
 
