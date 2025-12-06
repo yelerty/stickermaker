@@ -15,6 +15,9 @@ import Photos
 import AVFoundation
 import UniformTypeIdentifiers
 
+// AspectRatio enum은 VideoToGIFMaker.swift에 정의되어 있음
+// 여기서는 재사용
+
 @MainActor
 class StickerViewModel: ObservableObject {
     @Published var selectedImage: UIImage?
@@ -28,6 +31,8 @@ class StickerViewModel: ObservableObject {
     @Published var videoDuration: Double = 0
     @Published var selectedTime: Double = 0
     @Published var showVideoCapture = false
+    @Published var removeBackgroundEnabled = true
+    @Published var aspectRatio: AspectRatio = .original
 
     func loadImage() async {
         guard let photoItem = selectedPhotoItem else { return }
@@ -40,7 +45,19 @@ class StickerViewModel: ObservableObject {
             }
 
             selectedImage = image
-            await removeBackground(from: image)
+
+            // 비율 조정
+            var processedImage = image
+            if aspectRatio != .original {
+                processedImage = cropToAspectRatio(processedImage, aspectRatio: aspectRatio)
+            }
+
+            // 배경 제거
+            if removeBackgroundEnabled {
+                await removeBackground(from: processedImage)
+            } else {
+                self.processedImage = processedImage
+            }
         } catch {
             errorMessage = "이미지 로드 실패: \(error.localizedDescription)"
         }
@@ -150,6 +167,38 @@ class StickerViewModel: ObservableObject {
         }
 
         isSaving = false
+    }
+
+    private func cropToAspectRatio(_ image: UIImage, aspectRatio: AspectRatio) -> UIImage {
+        guard let cgImage = image.cgImage,
+              let targetRatio = aspectRatio.ratio else { return image }
+
+        let originalWidth = CGFloat(cgImage.width)
+        let originalHeight = CGFloat(cgImage.height)
+        let originalRatio = originalWidth / originalHeight
+
+        var newWidth: CGFloat
+        var newHeight: CGFloat
+
+        if targetRatio < originalRatio {
+            // 타겟 비율이 더 좁음 (세로로 긴 경우) - 높이 기준
+            newHeight = originalHeight
+            newWidth = originalHeight * targetRatio
+        } else {
+            // 타겟 비율이 더 넓음 - 너비 기준
+            newWidth = originalWidth
+            newHeight = originalWidth / targetRatio
+        }
+
+        // 중앙을 기준으로 크롭
+        let x = (originalWidth - newWidth) / 2
+        let y = (originalHeight - newHeight) / 2
+
+        let cropRect = CGRect(x: x, y: y, width: newWidth, height: newHeight)
+
+        guard let croppedCGImage = cgImage.cropping(to: cropRect) else { return image }
+
+        return UIImage(cgImage: croppedCGImage, scale: image.scale, orientation: image.imageOrientation)
     }
 
     func reset() {

@@ -227,8 +227,11 @@ struct GIFMakerView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                if let gifURL = viewModel.generatedGIFURL {
+            GeometryReader { geometry in
+                let isLandscape = geometry.size.width > geometry.size.height
+
+                VStack(spacing: 20) {
+                    if let gifURL = viewModel.generatedGIFURL {
                     ScrollView {
                         VStack(spacing: 20) {
                             // GIF 미리보기
@@ -312,111 +315,69 @@ struct GIFMakerView: View {
                     .frame(maxHeight: .infinity)
                 } else {
                     ScrollView {
-                        VStack(spacing: 20) {
-                            // 사진 선택
-                            PhotosPicker(
-                                selection: $viewModel.selectedItems,
-                                maxSelectionCount: 10,
-                                matching: .images
-                            ) {
-                                VStack(spacing: 10) {
-                                    Image(systemName: "photo.stack")
-                                        .font(.system(size: 50))
-                                        .foregroundStyle(.tint)
+                        if isLandscape {
+                            HStack(alignment: .top, spacing: 20) {
+                                // 왼쪽: 사진 선택 버튼 (작게)
+                                PhotosPicker(
+                                    selection: $viewModel.selectedItems,
+                                    maxSelectionCount: 10,
+                                    matching: .images
+                                ) {
+                                    VStack(spacing: 8) {
+                                        Image(systemName: "photo.stack")
+                                            .font(.system(size: 30))
+                                            .foregroundStyle(.tint)
 
-                                    Text("사진 선택 (\(viewModel.images.count)/10)")
-                                        .font(.headline)
-
-                                    Text("여러 장의 사진을 선택하세요")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 150)
-                                .background(Color.accentColor.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 15))
-                            }
-                            .padding(.horizontal)
-
-                            // 선택된 이미지 그리드
-                            if !viewModel.images.isEmpty {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    Text("선택된 사진")
-                                        .font(.headline)
-                                        .padding(.horizontal)
-
-                                    ScrollView(.horizontal, showsIndicators: false) {
-                                        HStack(spacing: 10) {
-                                            ForEach(Array(viewModel.images.enumerated()), id: \.offset) { index, image in
-                                                ZStack(alignment: .topTrailing) {
-                                                    Image(uiImage: image)
-                                                        .resizable()
-                                                        .aspectRatio(contentMode: .fill)
-                                                        .frame(width: 100, height: 100)
-                                                        .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                                                    Button(action: {
-                                                        viewModel.removeImage(at: index)
-                                                    }) {
-                                                        Image(systemName: "xmark.circle.fill")
-                                                            .foregroundColor(.white)
-                                                            .background(Circle().fill(Color.red))
-                                                    }
-                                                    .offset(x: 8, y: -8)
-                                                }
-                                            }
-                                        }
-                                        .padding(.horizontal)
-                                    }
-                                }
-
-                                // GIF 설정
-                                VStack(spacing: 15) {
-                                    // 배경 제거 옵션
-                                    Toggle(isOn: $viewModel.removeBackground) {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "scissors")
-                                                .foregroundStyle(.tint)
-                                            Text("배경 제거")
-                                                .font(.subheadline)
-                                                .fontWeight(.medium)
-                                        }
-                                    }
-                                    .toggleStyle(SwitchToggleStyle(tint: .accentColor))
-
-                                    Divider()
-
-                                    // 프레임 속도
-                                    HStack {
-                                        Text("프레임 속도")
+                                        Text("사진 선택")
                                             .font(.subheadline)
-                                        Spacer()
-                                        Text("\(String(format: "%.1f", viewModel.frameDelay))초")
+
+                                        Text("\(viewModel.images.count)/10")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .frame(width: 120)
+                                    .frame(height: 120)
+                                    .background(Color.accentColor.opacity(0.1))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                }
+                                .padding(.leading)
+
+                                // 오른쪽: 나머지 콘텐츠
+                                portraitContent
+                            }
+                            .padding(.top)
+                        } else {
+                            VStack(spacing: 20) {
+                                // 세로 모드: 사진 선택
+                                PhotosPicker(
+                                    selection: $viewModel.selectedItems,
+                                    maxSelectionCount: 10,
+                                    matching: .images
+                                ) {
+                                    VStack(spacing: 10) {
+                                        Image(systemName: "photo.stack")
+                                            .font(.system(size: 50))
+                                            .foregroundStyle(.tint)
+
+                                        Text("사진 선택 (\(viewModel.images.count)/10)")
+                                            .font(.headline)
+
+                                        Text("여러 장의 사진을 선택하세요")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                     }
-
-                                    Slider(value: $viewModel.frameDelay, in: 0.1...1.0, step: 0.1)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 150)
+                                    .background(Color.accentColor.opacity(0.1))
+                                    .clipShape(RoundedRectangle(cornerRadius: 15))
                                 }
-                                .padding()
-                                .background(Color.gray.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
                                 .padding(.horizontal)
 
-                                // GIF 생성 버튼
-                                Button(action: {
-                                    viewModel.createGIF()
-                                }) {
-                                    Label("GIF 만들기", systemImage: "sparkles")
-                                        .font(.headline)
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .padding(.horizontal)
+                                portraitContent
                             }
                         }
-                        .padding(.vertical)
+                    }
+                    .padding(.vertical)
                     }
                 }
 
@@ -439,6 +400,87 @@ struct GIFMakerView: View {
             Task {
                 await viewModel.loadImages()
             }
+        }
+    }
+
+    @ViewBuilder
+    var portraitContent: some View {
+        // 선택된 이미지 그리드
+        if !viewModel.images.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("선택된 사진")
+                    .font(.headline)
+                    .padding(.horizontal)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(Array(viewModel.images.enumerated()), id: \.offset) { index, image in
+                            ZStack(alignment: .topTrailing) {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                                Button(action: {
+                                    viewModel.removeImage(at: index)
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.white)
+                                        .background(Circle().fill(Color.red))
+                                }
+                                .offset(x: 8, y: -8)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+            }
+
+            // GIF 설정
+            VStack(spacing: 15) {
+                // 배경 제거 옵션
+                Toggle(isOn: $viewModel.removeBackground) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "scissors")
+                            .foregroundStyle(.tint)
+                        Text("배경 제거")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+                }
+                .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+
+                Divider()
+
+                // 프레임 속도
+                HStack {
+                    Text("프레임 속도")
+                        .font(.subheadline)
+                    Spacer()
+                    Text("\(String(format: "%.1f", viewModel.frameDelay))초")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Slider(value: $viewModel.frameDelay, in: 0.1...1.0, step: 0.1)
+            }
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal)
+
+            // GIF 생성 버튼
+            Button(action: {
+                viewModel.createGIF()
+            }) {
+                Label("GIF 만들기", systemImage: "sparkles")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal)
         }
     }
 }

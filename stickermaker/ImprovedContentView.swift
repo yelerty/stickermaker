@@ -12,12 +12,11 @@ struct ImprovedStickerMakerTab: View {
     @StateObject private var viewModel = StickerViewModel()
     @State private var showSaveAlert = false
     @State private var showingEditor = false
+    @State private var isLandscape = false
 
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
-                let isLandscape = geometry.size.width > geometry.size.height
-
                 ScrollView(showsIndicators: false) {
                     if let processedImage = viewModel.processedImage {
                         if isLandscape {
@@ -32,10 +31,16 @@ struct ImprovedStickerMakerTab: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onChange(of: geometry.size) { oldValue, newValue in
+                    isLandscape = newValue.width > newValue.height
+                }
+                .onAppear {
+                    isLandscape = geometry.size.width > geometry.size.height
+                }
             }
             .background(Color.appBackground.ignoresSafeArea())
             .navigationTitle("Sticker Maker")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(isLandscape ? .inline : .large)
             .alert("저장 완료", isPresented: $showSaveAlert) {
                 Button("확인", role: .cancel) { }
             } message: {
@@ -73,6 +78,9 @@ struct ImprovedStickerMakerTab: View {
             }
             .padding(.horizontal, Spacing.md)
 
+            optionControls
+                .padding(.horizontal, Spacing.md)
+
             actionButtons
                 .padding(.horizontal, Spacing.md)
 
@@ -96,9 +104,10 @@ struct ImprovedStickerMakerTab: View {
             }
             .frame(width: geometry.size.width * 0.55)
 
-            // 오른쪽: 액션 버튼들
+            // 오른쪽: 옵션 및 액션 버튼들
             VStack(spacing: Spacing.lg) {
                 Spacer()
+                optionControls
                 actionButtons
                 Spacer()
 
@@ -155,6 +164,60 @@ struct ImprovedStickerMakerTab: View {
                 .buttonStyle(SecondaryButtonStyle())
                 .frame(width: 50)
             }
+        }
+    }
+
+    var optionControls: some View {
+        CardView {
+            VStack(spacing: Spacing.md) {
+                // 배경 제거 토글
+                Toggle(isOn: $viewModel.removeBackgroundEnabled) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "scissors")
+                            .foregroundStyle(.tint)
+                        Text("배경 제거")
+                            .font(.appSubheadline)
+                            .fontWeight(.medium)
+                    }
+                }
+                .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+                .onChange(of: viewModel.removeBackgroundEnabled) { _, _ in
+                    Task {
+                        if viewModel.selectedImage != nil {
+                            await viewModel.loadImage()
+                        }
+                    }
+                }
+
+                Divider()
+
+                // 프레임 비율
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "aspectratio")
+                            .foregroundStyle(.tint)
+                        Text("프레임 비율")
+                            .font(.appSubheadline)
+                            .fontWeight(.medium)
+                    }
+
+                    Picker("프레임 비율", selection: $viewModel.aspectRatio) {
+                        ForEach(AspectRatio.allCases) { ratio in
+                            Text(ratio.rawValue).tag(ratio)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(Color.appPrimary)
+                    .onChange(of: viewModel.aspectRatio) { _, _ in
+                        Task {
+                            if viewModel.selectedImage != nil {
+                                await viewModel.loadImage()
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(Spacing.md)
         }
     }
 
