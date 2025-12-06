@@ -328,6 +328,12 @@ class VideoToGIFViewModel: ObservableObject {
         }
     }
 
+    func backToEdit() {
+        generatedGIFURL = nil
+        errorMessage = nil
+        // Keep all other settings intact (videoURL, asset, startTime, endTime, frameRate, frameDelay, removeBackground)
+    }
+
     func reset() {
         selectedVideoItem = nil
         videoURL = nil
@@ -375,23 +381,44 @@ struct VideoToGIFView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 20))
                                 .padding()
 
-                            HStack(spacing: 15) {
+                            VStack(spacing: 12) {
+                                // 저장 버튼
                                 Button(action: {
                                     viewModel.saveGIF()
                                     showingSaveAlert = true
                                 }) {
-                                    Label("저장", systemImage: "square.and.arrow.down")
-                                        .frame(maxWidth: .infinity)
+                                    HStack {
+                                        Image(systemName: "arrow.down.circle.fill")
+                                        Text("저장")
+                                    }
+                                    .frame(maxWidth: .infinity)
                                 }
-                                .buttonStyle(.borderedProminent)
+                                .buttonStyle(PrimaryButtonStyle())
 
-                                Button(action: {
-                                    viewModel.reset()
-                                }) {
-                                    Label("다시 만들기", systemImage: "arrow.clockwise")
+                                // 편집 다시하기 & 새로 만들기 버튼
+                                HStack(spacing: 12) {
+                                    Button(action: {
+                                        viewModel.backToEdit()
+                                    }) {
+                                        HStack {
+                                            Image(systemName: "slider.horizontal.3")
+                                            Text("다시 편집")
+                                        }
                                         .frame(maxWidth: .infinity)
+                                    }
+                                    .buttonStyle(SecondaryButtonStyle())
+
+                                    Button(action: {
+                                        viewModel.reset()
+                                    }) {
+                                        HStack {
+                                            Image(systemName: "arrow.clockwise")
+                                            Text("새로 만들기")
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                    }
+                                    .buttonStyle(SecondaryButtonStyle())
                                 }
-                                .buttonStyle(.bordered)
                             }
                             .padding(.horizontal)
                         }
