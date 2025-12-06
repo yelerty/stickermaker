@@ -25,8 +25,8 @@ class BackgroundCompositorViewModel: ObservableObject {
     @Published var isSaving = false
     @Published var errorMessage: String?
     @Published var personScale: Double = 1.0
-    @Published var personOffsetX: Double = 0.0
-    @Published var personOffsetY: Double = 0.0
+    @Published var personOffsetXPercent: Double = 0.0  // -50% ~ 50%
+    @Published var personOffsetYPercent: Double = 0.0  // -50% ~ 50%
 
     func loadPersonImage() async {
         guard let item = selectedPersonItem else { return }
@@ -155,9 +155,11 @@ class BackgroundCompositorViewModel: ObservableObject {
             height: personSize.height * personScale
         )
 
-        // 사람 이미지 위치 (중앙 + 오프셋)
-        let personX = (backgroundSize.width - scaledPersonSize.width) / 2 + personOffsetX
-        let personY = (backgroundSize.height - scaledPersonSize.height) / 2 + personOffsetY
+        // 사람 이미지 위치 (중앙 + 퍼센트 기반 오프셋)
+        let offsetX = backgroundSize.width * (personOffsetXPercent / 100.0)
+        let offsetY = backgroundSize.height * (personOffsetYPercent / 100.0)
+        let personX = (backgroundSize.width - scaledPersonSize.width) / 2 + offsetX
+        let personY = (backgroundSize.height - scaledPersonSize.height) / 2 + offsetY
 
         let renderer = UIGraphicsImageRenderer(size: backgroundSize)
         let composed = renderer.image { context in
@@ -206,8 +208,8 @@ class BackgroundCompositorViewModel: ObservableObject {
         personWithoutBg = nil
         composedImage = nil
         personScale = 1.0
-        personOffsetX = 0.0
-        personOffsetY = 0.0
+        personOffsetXPercent = 0.0
+        personOffsetYPercent = 0.0
         errorMessage = nil
     }
 }
@@ -270,23 +272,23 @@ struct BackgroundCompositorView: View {
 
                                 CustomSlider(
                                     title: "가로 위치",
-                                    value: $viewModel.personOffsetX,
-                                    range: -200...200,
-                                    step: 5,
-                                    unit: "px"
+                                    value: $viewModel.personOffsetXPercent,
+                                    range: -50...50,
+                                    step: 1,
+                                    unit: "%"
                                 )
-                                .onChange(of: viewModel.personOffsetX) { _, _ in
+                                .onChange(of: viewModel.personOffsetXPercent) { _, _ in
                                     viewModel.composeImages()
                                 }
 
                                 CustomSlider(
                                     title: "세로 위치",
-                                    value: $viewModel.personOffsetY,
-                                    range: -200...200,
-                                    step: 5,
-                                    unit: "px"
+                                    value: $viewModel.personOffsetYPercent,
+                                    range: -50...50,
+                                    step: 1,
+                                    unit: "%"
                                 )
-                                .onChange(of: viewModel.personOffsetY) { _, _ in
+                                .onChange(of: viewModel.personOffsetYPercent) { _, _ in
                                     viewModel.composeImages()
                                 }
                             }
