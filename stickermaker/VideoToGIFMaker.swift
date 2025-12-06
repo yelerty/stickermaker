@@ -42,6 +42,42 @@ enum AspectRatio: String, CaseIterable, Identifiable {
     }
 }
 
+enum ScaleAnimation: String, CaseIterable, Identifiable {
+    case none = "없음"
+    case zoomInOut = "작아졌다 커지기"
+    case zoomIn = "계속 작아지기"
+    case zoomOut = "계속 커지기"
+    case pulse = "작은 상태에서 30% 커지기"
+
+    var id: String { rawValue }
+
+    func scaleForFrame(_ frameIndex: Int, totalFrames: Int) -> CGFloat {
+        let progress = CGFloat(frameIndex) / CGFloat(max(totalFrames - 1, 1))
+
+        switch self {
+        case .none:
+            return 1.0
+
+        case .zoomInOut:
+            // 사인 곡선으로 작아졌다 커지기 (0.7 ~ 1.0 범위)
+            let scale = sin(progress * .pi) * 0.3 + 0.7
+            return scale
+
+        case .zoomIn:
+            // 선형으로 계속 작아지기 (1.0 -> 0.5)
+            return 1.0 - (progress * 0.5)
+
+        case .zoomOut:
+            // 선형으로 계속 커지기 (0.7 -> 1.0)
+            return 0.7 + (progress * 0.3)
+
+        case .pulse:
+            // 작은 상태(0.7)에서 시작해서 30% 커지기 (0.7 -> 1.0)
+            return 0.7 + (progress * 0.3)
+        }
+    }
+}
+
 class VideoToGIFViewModel: ObservableObject {
     @Published var selectedVideoItem: PhotosPickerItem?
     @Published var videoURL: URL?
@@ -58,6 +94,7 @@ class VideoToGIFViewModel: ObservableObject {
     @Published var removeBackground = false
     @Published var thumbnailImage: UIImage?
     @Published var aspectRatio: AspectRatio = .original
+    @Published var scaleAnimation: ScaleAnimation = .none
 
     private var asset: AVAsset?
     private var isCancelled = false
@@ -214,6 +251,12 @@ class VideoToGIFViewModel: ObservableObject {
                     image = cropToAspectRatio(image, aspectRatio: aspectRatio)
                 }
 
+                // 스케일 애니메이션 적용
+                if scaleAnimation != .none {
+                    let scale = scaleAnimation.scaleForFrame(i, totalFrames: frameRate)
+                    image = scaleImage(image, scale: scale)
+                }
+
                 frames.append(image)
             } catch {
                 print("프레임 추출 실패 at \(timeValue): \(error)")
@@ -253,6 +296,35 @@ class VideoToGIFViewModel: ObservableObject {
         guard let croppedCGImage = cgImage.cropping(to: cropRect) else { return image }
 
         return UIImage(cgImage: croppedCGImage, scale: image.scale, orientation: image.imageOrientation)
+    }
+
+    private func scaleImage(_ image: UIImage, scale: CGFloat) -> UIImage {
+        guard let cgImage = image.cgImage else { return image }
+
+        let originalWidth = CGFloat(cgImage.width)
+        let originalHeight = CGFloat(cgImage.height)
+
+        // 새로운 크기 계산
+        let newWidth = originalWidth * scale
+        let newHeight = originalHeight * scale
+
+        // 새 크기로 이미지를 그리되, 중앙에 배치하기 위해 캔버스는 원본 크기 유지
+        let canvasSize = CGSize(width: originalWidth, height: originalHeight)
+
+        let renderer = UIGraphicsImageRenderer(size: canvasSize)
+        let scaledImage = renderer.image { context in
+            // 투명 배경
+            context.cgContext.clear(CGRect(origin: .zero, size: canvasSize))
+
+            // 중앙에 스케일된 이미지 그리기
+            let x = (originalWidth - newWidth) / 2
+            let y = (originalHeight - newHeight) / 2
+            let rect = CGRect(x: x, y: y, width: newWidth, height: newHeight)
+
+            image.draw(in: rect)
+        }
+
+        return scaledImage
     }
 
     private func removeBackgroundFromFrames(_ frames: [UIImage]) async throws -> [UIImage] {
@@ -632,6 +704,27 @@ struct VideoToGIFView: View {
                                     Picker("프레임 비율", selection: $viewModel.aspectRatio) {
                                         ForEach(AspectRatio.allCases) { ratio in
                                             Text(ratio.rawValue).tag(ratio)
+                                        }
+                                    }
+                                    .pickerStyle(.menu)
+                                    .tint(Color.appPrimary)
+                                }
+
+                                Divider()
+
+                                // 크기 애니메이션
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                            .foregroundStyle(.tint)
+                                        Text("크기 애니메이션")
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                    }
+
+                                    Picker("크기 애니메이션", selection: $viewModel.scaleAnimation) {
+                                        ForEach(ScaleAnimation.allCases) { animation in
+                                            Text(animation.rawValue).tag(animation)
                                         }
                                     }
                                     .pickerStyle(.menu)
