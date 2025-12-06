@@ -31,6 +31,8 @@ class VideoToGIFViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var removeBackground = false
     @Published var thumbnailImage: UIImage?
+    @Published var cropScale: Double = 1.0 // 1.0 = 원본, 0.5 = 50% 크기
+    @Published var enableCrop = false
 
     private var asset: AVAsset?
     private var isCancelled = false
@@ -180,13 +182,40 @@ class VideoToGIFViewModel: ObservableObject {
 
             do {
                 let cgImage = try imageGenerator.copyCGImage(at: time, actualTime: nil)
-                frames.append(UIImage(cgImage: cgImage))
+                var image = UIImage(cgImage: cgImage)
+
+                // 크롭이 활성화된 경우 이미지 크롭/리사이즈
+                if enableCrop && cropScale < 1.0 {
+                    image = cropImage(image, scale: cropScale)
+                }
+
+                frames.append(image)
             } catch {
                 print("프레임 추출 실패 at \(timeValue): \(error)")
             }
         }
 
         return frames
+    }
+
+    private func cropImage(_ image: UIImage, scale: Double) -> UIImage {
+        guard let cgImage = image.cgImage else { return image }
+
+        let originalWidth = CGFloat(cgImage.width)
+        let originalHeight = CGFloat(cgImage.height)
+
+        // 중앙을 기준으로 크롭
+        let newWidth = originalWidth * scale
+        let newHeight = originalHeight * scale
+
+        let x = (originalWidth - newWidth) / 2
+        let y = (originalHeight - newHeight) / 2
+
+        let cropRect = CGRect(x: x, y: y, width: newWidth, height: newHeight)
+
+        guard let croppedCGImage = cgImage.cropping(to: cropRect) else { return image }
+
+        return UIImage(cgImage: croppedCGImage, scale: image.scale, orientation: image.imageOrientation)
     }
 
     private func removeBackgroundFromFrames(_ frames: [UIImage]) async throws -> [UIImage] {
@@ -531,7 +560,7 @@ struct VideoToGIFView: View {
                                 Slider(value: Binding(
                                     get: { Double(viewModel.frameRate) },
                                     set: { viewModel.frameRate = Int($0) }
-                                ), in: 5...30, step: 1)
+                                ), in: 5...60, step: 1)
 
                                 Divider()
 
@@ -550,6 +579,40 @@ struct VideoToGIFView: View {
                                 Text("총 재생시간: \(String(format: "%.1f", Double(viewModel.frameRate) * viewModel.frameDelay))초")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
+
+                                Divider()
+
+                                // 프레임 크롭
+                                Toggle(isOn: $viewModel.enableCrop) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "crop")
+                                            .foregroundStyle(.tint)
+                                        Text("프레임 크롭")
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                    }
+                                }
+                                .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+
+                                if viewModel.enableCrop {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack {
+                                            Text("크기")
+                                                .font(.subheadline)
+                                            Spacer()
+                                            Text("\(Int(viewModel.cropScale * 100))%")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 4)
+                                                .background(Color.appPrimary.opacity(0.1))
+                                                .cornerRadius(6)
+                                        }
+
+                                        Slider(value: $viewModel.cropScale, in: 0.3...1.0, step: 0.05)
+                                            .tint(Color.appPrimary)
+                                    }
+                                }
 
                                 Divider()
 
@@ -580,6 +643,20 @@ struct VideoToGIFView: View {
                                     .padding()
                             }
                             .buttonStyle(.borderedProminent)
+                            .padding(.horizontal)
+
+                            // 다른 비디오 선택 버튼
+                            PhotosPicker(
+                                selection: $viewModel.selectedVideoItem,
+                                matching: .videos
+                            ) {
+                                HStack {
+                                    Image(systemName: "arrow.triangle.2.circlepath.video")
+                                    Text("다른 비디오 선택")
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(SecondaryButtonStyle())
                             .padding(.horizontal)
                         }
                         .padding(.vertical)

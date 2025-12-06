@@ -12,6 +12,8 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 import Combine
 import Photos
+import AVFoundation
+import UniformTypeIdentifiers
 
 @MainActor
 class StickerViewModel: ObservableObject {
@@ -21,6 +23,11 @@ class StickerViewModel: ObservableObject {
     @Published var isSaving = false
     @Published var errorMessage: String?
     @Published var selectedPhotoItem: PhotosPickerItem?
+    @Published var selectedVideoItem: PhotosPickerItem?
+    @Published var videoURL: URL?
+    @Published var videoDuration: Double = 0
+    @Published var selectedTime: Double = 0
+    @Published var showVideoCapture = false
 
     func loadImage() async {
         guard let photoItem = selectedPhotoItem else { return }
@@ -149,6 +156,63 @@ class StickerViewModel: ObservableObject {
         selectedImage = nil
         processedImage = nil
         selectedPhotoItem = nil
+        selectedVideoItem = nil
+        videoURL = nil
+        showVideoCapture = false
         errorMessage = nil
+    }
+
+    func loadVideo() async {
+        guard let videoItem = selectedVideoItem else { return }
+
+        isProcessing = true
+        errorMessage = nil
+
+        do {
+            guard let movie = try await videoItem.loadTransferable(type: VideoTransferable.self) else {
+                errorMessage = "비디오를 불러올 수 없습니다."
+                isProcessing = false
+                return
+            }
+
+            let asset = AVAsset(url: movie.url)
+            let duration = try await asset.load(.duration)
+            let durationSeconds = CMTimeGetSeconds(duration)
+
+            await MainActor.run {
+                self.videoURL = movie.url
+                self.videoDuration = durationSeconds
+                self.selectedTime = durationSeconds / 2
+                self.showVideoCapture = true
+            }
+
+            // 초기 프레임 캡처
+            await captureVideoFrame()
+        } catch {
+            errorMessage = "비디오 로드 실패: \(error.localizedDescription)"
+        }
+
+        isProcessing = false
+    }
+
+    func captureVideoFrame() async {
+        guard let videoURL = videoURL else { return }
+
+        do {
+            let asset = AVAsset(url: videoURL)
+            let imageGenerator = AVAssetImageGenerator(asset: asset)
+            imageGenerator.appliesPreferredTrackTransform = true
+            imageGenerator.requestedTimeToleranceBefore = .zero
+            imageGenerator.requestedTimeToleranceAfter = .zero
+
+            let time = CMTime(seconds: selectedTime, preferredTimescale: 600)
+            let cgImage = try imageGenerator.copyCGImage(at: time, actualTime: nil)
+            let image = UIImage(cgImage: cgImage)
+
+            selectedImage = image
+            await removeBackground(from: image)
+        } catch {
+            errorMessage = "프레임 캡처 실패: \(error.localizedDescription)"
+        }
     }
 }

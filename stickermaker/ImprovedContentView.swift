@@ -50,6 +50,14 @@ struct ImprovedStickerMakerTab: View {
                 await viewModel.loadImage()
             }
         }
+        .onChange(of: viewModel.selectedVideoItem) { oldValue, newValue in
+            Task {
+                await viewModel.loadVideo()
+            }
+        }
+        .sheet(isPresented: $viewModel.showVideoCapture) {
+            VideoCaptureView(viewModel: viewModel)
+        }
     }
 
     func portraitPreview(image: UIImage) -> some View {
@@ -169,21 +177,36 @@ struct ImprovedStickerMakerTab: View {
             EmptyStateView(
                 icon: "photo.badge.plus",
                 title: "스티커 만들기",
-                message: "사진을 선택하면 자동으로\n배경이 제거됩니다"
+                message: "사진 또는 비디오를 선택하여\n스티커를 만드세요"
             )
 
-            PhotosPicker(
-                selection: $viewModel.selectedPhotoItem,
-                matching: .images
-            ) {
-                HStack {
-                    Image(systemName: "photo.on.rectangle.angled")
-                    Text("사진 선택")
+            VStack(spacing: Spacing.md) {
+                PhotosPicker(
+                    selection: $viewModel.selectedPhotoItem,
+                    matching: .images
+                ) {
+                    HStack {
+                        Image(systemName: "photo.on.rectangle.angled")
+                        Text("사진 선택")
+                    }
+                    .frame(maxWidth: 300)
                 }
-                .frame(maxWidth: 300)
+                .buttonStyle(PrimaryButtonStyle())
+                .controlSize(.large)
+
+                PhotosPicker(
+                    selection: $viewModel.selectedVideoItem,
+                    matching: .videos
+                ) {
+                    HStack {
+                        Image(systemName: "video.badge.plus")
+                        Text("비디오 선택")
+                    }
+                    .frame(maxWidth: 300)
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .controlSize(.large)
             }
-            .buttonStyle(PrimaryButtonStyle())
-            .controlSize(.large)
         }
         .padding(Spacing.xxl)
     }
@@ -211,5 +234,98 @@ struct EnhancedStickerPreviewView: View {
                 .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
                 .padding(Spacing.md)
         }
+    }
+}
+
+struct VideoCaptureView: View {
+    @ObservedObject var viewModel: StickerViewModel
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: Spacing.lg) {
+                if let image = viewModel.selectedImage {
+                    CardView {
+                        Image(uiImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(maxHeight: 400)
+                            .background(CheckerboardView())
+                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+                            .padding(Spacing.md)
+                    }
+                    .padding(.horizontal, Spacing.md)
+                }
+
+                VStack(alignment: .leading, spacing: Spacing.md) {
+                    Text("프레임 선택")
+                        .font(.appHeadline)
+                        .padding(.horizontal, Spacing.md)
+
+                    VStack(spacing: Spacing.sm) {
+                        HStack {
+                            Text(formatTime(0))
+                                .font(.appCaption)
+                                .foregroundColor(.secondary)
+
+                            Spacer()
+
+                            Text(formatTime(viewModel.selectedTime))
+                                .font(.appSubheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.appPrimary)
+
+                            Spacer()
+
+                            Text(formatTime(viewModel.videoDuration))
+                                .font(.appCaption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.horizontal, Spacing.md)
+
+                        Slider(value: $viewModel.selectedTime, in: 0...viewModel.videoDuration)
+                            .tint(Color.appPrimary)
+                            .padding(.horizontal, Spacing.md)
+                            .onChange(of: viewModel.selectedTime) { oldValue, newValue in
+                                Task {
+                                    await viewModel.captureVideoFrame()
+                                }
+                            }
+                    }
+                }
+
+                Button(action: {
+                    viewModel.showVideoCapture = false
+                }) {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text("이 프레임으로 스티커 만들기")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .padding(.horizontal, Spacing.md)
+
+                Spacer()
+            }
+            .padding(.vertical, Spacing.md)
+            .navigationTitle("비디오 프레임 선택")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("취소") {
+                        viewModel.reset()
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func formatTime(_ seconds: Double) -> String {
+        let minutes = Int(seconds) / 60
+        let secs = Int(seconds) % 60
+        let millis = Int((seconds.truncatingRemainder(dividingBy: 1)) * 10)
+        return String(format: "%d:%02d.%d", minutes, secs, millis)
     }
 }
