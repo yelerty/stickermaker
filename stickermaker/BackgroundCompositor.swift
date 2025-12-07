@@ -252,6 +252,7 @@ struct BackgroundCompositorView: View {
             }
             .navigationTitle("배경 합성")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inlineLarge)
             .alert("저장 완료", isPresented: $showSaveAlert) {
                 Button("확인", role: .cancel) { }
             } message: {

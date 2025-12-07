@@ -45,6 +45,7 @@ struct ImprovedStickerMakerTab: View {
             .background(Color.appBackground.ignoresSafeArea())
             .navigationTitle("Sticker Maker")
             .navigationBarTitleDisplayMode(isLandscape ? .inline : .large)
+            .toolbarTitleDisplayMode(isLandscape ? .inlineLarge : .automatic)
             .alert("저장 완료", isPresented: $showSaveAlert) {
                 Button("확인", role: .cancel) { }
             } message: {
@@ -240,44 +241,75 @@ struct ImprovedStickerMakerTab: View {
     }
 
     var landscapeEmptyStateView: some View {
-        VStack(spacing: Spacing.lg) {
-            EmptyStateView(
-                icon: "photo.badge.plus",
-                title: "스티커 만들기",
-                message: "사진 또는 비디오를 선택하여\n스티커를 만드세요"
-            )
+        GeometryReader { geometry in
+            HStack(alignment: .top, spacing: Spacing.lg) {
+                // 왼쪽: Empty State (40%)
+                VStack {
+                    EmptyStateView(
+                        icon: "photo.badge.plus",
+                        title: "스티커 만들기",
+                        message: "사진 또는 비디오를 선택하여\n스티커를 만드세요"
+                    )
 
-            HStack(spacing: Spacing.lg) {
-                PhotosPicker(
-                    selection: $viewModel.selectedPhotoItem,
-                    matching: .images
-                ) {
-                    VStack(spacing: Spacing.sm) {
-                        Image(systemName: "photo.on.rectangle.angled")
-                            .font(.system(size: 40))
-                        Text("사진 선택")
-                            .font(.appHeadline)
+                    if viewModel.isProcessing {
+                        VStack(spacing: Spacing.md) {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .tint(Color.appPrimary)
+                            Text("배경 제거 중...")
+                                .font(.appBody)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(Spacing.xl)
                     }
-                    .frame(width: 200, height: 120)
                 }
-                .buttonStyle(PrimaryButtonStyle())
+                .frame(width: geometry.size.width * 0.35)
+                .padding(.leading, Spacing.md)
 
-                PhotosPicker(
-                    selection: $viewModel.selectedVideoItem,
-                    matching: .videos
-                ) {
+                // 오른쪽: 선택 버튼 (60%)
+                VStack(spacing: Spacing.md) {
+                    // 사진 선택
                     VStack(spacing: Spacing.sm) {
-                        Image(systemName: "video.badge.plus")
-                            .font(.system(size: 40))
-                        Text("비디오 선택")
-                            .font(.appHeadline)
+                        Text("1. 사진 선택")
+                            .font(.appSubheadline)
+                            .foregroundColor(.secondary)
+
+                        PhotosPicker(
+                            selection: $viewModel.selectedPhotoItem,
+                            matching: .images
+                        ) {
+                            HStack {
+                                Image(systemName: "photo.on.rectangle.angled")
+                                Text("사진 선택")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
                     }
-                    .frame(width: 200, height: 120)
+
+                    // 비디오 선택
+                    VStack(spacing: Spacing.sm) {
+                        Text("2. 비디오 선택")
+                            .font(.appSubheadline)
+                            .foregroundColor(.secondary)
+
+                        PhotosPicker(
+                            selection: $viewModel.selectedVideoItem,
+                            matching: .videos
+                        ) {
+                            HStack {
+                                Image(systemName: "video.badge.plus")
+                                Text("비디오 선택")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                    }
                 }
-                .buttonStyle(SecondaryButtonStyle())
+                .frame(width: geometry.size.width * 0.55)
+                .padding(.trailing, Spacing.md)
             }
         }
-        .padding(Spacing.lg)
     }
 
     var emptyStateView: some View {

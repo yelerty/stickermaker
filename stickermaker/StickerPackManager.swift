@@ -122,6 +122,7 @@ struct StickerPackView: View {
             }
             .navigationTitle("스티커팩 관리")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: {
@@ -214,6 +215,7 @@ struct StickerPickerView: View {
             }
             .navigationTitle("스티커 만들기")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("취소") {

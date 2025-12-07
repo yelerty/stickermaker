@@ -389,6 +389,7 @@ struct GIFMakerView: View {
             }
             .navigationTitle("GIF 만들기")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inlineLarge)
             .alert("저장 완료", isPresented: $showingSaveAlert) {
                 Button("확인", role: .cancel) { }
             } message: {
