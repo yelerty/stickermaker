@@ -508,7 +508,9 @@ struct VideoToGIFView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
+            GeometryReader { geometry in
+                let isLandscape = geometry.size.width > geometry.size.height
+
                 if let gifURL = viewModel.generatedGIFURL {
                     // GIF 미리보기
                     ScrollView {
@@ -603,180 +605,11 @@ struct VideoToGIFView: View {
                 } else if viewModel.videoURL != nil {
                     // 비디오 편집 화면
                     ScrollView {
-                        VStack(spacing: 20) {
-                            // 썸네일 미리보기
-                            if let thumbnail = viewModel.thumbnailImage {
-                                Image(uiImage: thumbnail)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(maxHeight: 300)
-                                    .clipShape(RoundedRectangle(cornerRadius: 15))
-                                    .padding(.horizontal)
-                            }
-
-                            // 구간 설정
-                            VStack(alignment: .leading, spacing: 15) {
-                                Text("GIF 구간 선택")
-                                    .font(.headline)
-                                    .padding(.horizontal)
-
-                                VStack(spacing: 15) {
-                                    HStack {
-                                        Text("시작")
-                                            .frame(width: 60, alignment: .leading)
-                                        Slider(value: $viewModel.startTime, in: 0...max(0, viewModel.endTime - 0.1))
-                                            .onChange(of: viewModel.startTime) { oldValue, newValue in
-                                                Task {
-                                                    await viewModel.generateThumbnail()
-                                                }
-                                            }
-                                        Text(formatTime(viewModel.startTime))
-                                            .frame(width: 50)
-                                            .font(.caption)
-                                    }
-
-                                    HStack {
-                                        Text("종료")
-                                            .frame(width: 60, alignment: .leading)
-                                        Slider(value: $viewModel.endTime, in: min(viewModel.startTime + 0.1, viewModel.duration)...viewModel.duration)
-                                        Text(formatTime(viewModel.endTime))
-                                            .frame(width: 50)
-                                            .font(.caption)
-                                    }
-
-                                    Text("선택된 구간: \(formatTime(viewModel.endTime - viewModel.startTime))")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .padding()
-                                .background(Color.gray.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .padding(.horizontal)
-                            }
-
-                            // GIF 설정
-                            VStack(spacing: 15) {
-                                // 프레임 레이트
-                                HStack {
-                                    Text("프레임 수")
-                                        .font(.subheadline)
-                                    Spacer()
-                                    Text("\(viewModel.frameRate) 프레임")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Slider(value: Binding(
-                                    get: { Double(viewModel.frameRate) },
-                                    set: { viewModel.frameRate = Int($0) }
-                                ), in: 5...45, step: 1)
-
-                                Divider()
-
-                                // 프레임 간 딜레이
-                                HStack {
-                                    Text("프레임 간 딜레이")
-                                        .font(.subheadline)
-                                    Spacer()
-                                    Text("\(String(format: "%.2f", viewModel.frameDelay))초")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Slider(value: $viewModel.frameDelay, in: 0.03...0.5, step: 0.01)
-
-                                Text("총 재생시간: \(String(format: "%.1f", Double(viewModel.frameRate) * viewModel.frameDelay))초")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-
-                                Divider()
-
-                                // 프레임 비율
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "aspectratio")
-                                            .foregroundStyle(.tint)
-                                        Text("프레임 비율")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                    }
-
-                                    Picker("프레임 비율", selection: $viewModel.aspectRatio) {
-                                        ForEach(AspectRatio.allCases) { ratio in
-                                            Text(ratio.rawValue).tag(ratio)
-                                        }
-                                    }
-                                    .pickerStyle(.menu)
-                                    .tint(Color.appPrimary)
-                                }
-
-                                Divider()
-
-                                // 크기 애니메이션
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                            .foregroundStyle(.tint)
-                                        Text("크기 애니메이션")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                    }
-
-                                    Picker("크기 애니메이션", selection: $viewModel.scaleAnimation) {
-                                        ForEach(ScaleAnimation.allCases) { animation in
-                                            Text(animation.rawValue).tag(animation)
-                                        }
-                                    }
-                                    .pickerStyle(.menu)
-                                    .tint(Color.appPrimary)
-                                }
-
-                                Divider()
-
-                                // 배경 제거
-                                Toggle(isOn: $viewModel.removeBackground) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "scissors")
-                                            .foregroundStyle(.tint)
-                                        Text("배경 제거")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                    }
-                                }
-                                .toggleStyle(SwitchToggleStyle(tint: .accentColor))
-                            }
-                            .padding()
-                            .background(Color.gray.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .padding(.horizontal)
-
-                            // GIF 생성 버튼
-                            Button(action: {
-                                viewModel.createGIF()
-                            }) {
-                                Label("GIF 만들기", systemImage: "sparkles")
-                                    .font(.headline)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .padding(.horizontal)
-
-                            // 다른 비디오 선택 버튼
-                            PhotosPicker(
-                                selection: $viewModel.selectedVideoItem,
-                                matching: .videos
-                            ) {
-                                HStack {
-                                    Image(systemName: "arrow.triangle.2.circlepath.video")
-                                    Text("다른 비디오 선택")
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(SecondaryButtonStyle())
-                            .padding(.horizontal)
+                        if isLandscape {
+                            landscapeEditView(geometry: geometry)
+                        } else {
+                            portraitEditView
                         }
-                        .padding(.vertical)
                     }
                 } else {
                     // 초기 상태
@@ -832,6 +665,273 @@ struct VideoToGIFView: View {
                 await viewModel.loadVideo()
             }
         }
+    }
+
+    func landscapeEditView(geometry: GeometryProxy) -> some View {
+        HStack(alignment: .top, spacing: Spacing.lg) {
+            // 왼쪽: 썸네일 미리보기 (40%)
+            VStack {
+                if let thumbnail = viewModel.thumbnailImage {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .clipShape(RoundedRectangle(cornerRadius: 15))
+                }
+            }
+            .frame(width: geometry.size.width * 0.35)
+            .padding(.leading, Spacing.md)
+
+            // 오른쪽: 컨트롤 패널 (60%)
+            VStack(spacing: 15) {
+                // 구간 설정
+                VStack(alignment: .leading, spacing: 15) {
+                    Text("GIF 구간 선택")
+                        .font(.headline)
+
+                    VStack(spacing: 15) {
+                        HStack {
+                            Text("시작")
+                                .frame(width: 60, alignment: .leading)
+                            Slider(value: $viewModel.startTime, in: 0...max(0, viewModel.endTime - 0.1))
+                                .onChange(of: viewModel.startTime) { oldValue, newValue in
+                                    Task {
+                                        await viewModel.generateThumbnail()
+                                    }
+                                }
+                            Text(formatTime(viewModel.startTime))
+                                .frame(width: 50)
+                                .font(.caption)
+                        }
+
+                        HStack {
+                            Text("종료")
+                                .frame(width: 60, alignment: .leading)
+                            Slider(value: $viewModel.endTime, in: min(viewModel.startTime + 0.1, viewModel.duration)...viewModel.duration)
+                            Text(formatTime(viewModel.endTime))
+                                .frame(width: 50)
+                                .font(.caption)
+                        }
+
+                        Text("선택된 구간: \(formatTime(viewModel.endTime - viewModel.startTime))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+
+                // GIF 설정
+                settingsPanel
+
+                // GIF 생성 버튼
+                Button(action: {
+                    viewModel.createGIF()
+                }) {
+                    Label("GIF 만들기", systemImage: "sparkles")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                }
+                .buttonStyle(.borderedProminent)
+
+                // 다른 비디오 선택 버튼
+                PhotosPicker(
+                    selection: $viewModel.selectedVideoItem,
+                    matching: .videos
+                ) {
+                    HStack {
+                        Image(systemName: "arrow.triangle.2.circlepath.video")
+                        Text("다른 비디오 선택")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
+            .frame(width: geometry.size.width * 0.55)
+            .padding(.trailing, Spacing.md)
+        }
+    }
+
+    var portraitEditView: some View {
+        VStack(spacing: 20) {
+            // 썸네일 미리보기
+            if let thumbnail = viewModel.thumbnailImage {
+                Image(uiImage: thumbnail)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxHeight: 300)
+                    .clipShape(RoundedRectangle(cornerRadius: 15))
+                    .padding(.horizontal)
+            }
+
+            // 구간 설정
+            VStack(alignment: .leading, spacing: 15) {
+                Text("GIF 구간 선택")
+                    .font(.headline)
+                    .padding(.horizontal)
+
+                VStack(spacing: 15) {
+                    HStack {
+                        Text("시작")
+                            .frame(width: 60, alignment: .leading)
+                        Slider(value: $viewModel.startTime, in: 0...max(0, viewModel.endTime - 0.1))
+                            .onChange(of: viewModel.startTime) { oldValue, newValue in
+                                Task {
+                                    await viewModel.generateThumbnail()
+                                }
+                            }
+                        Text(formatTime(viewModel.startTime))
+                            .frame(width: 50)
+                            .font(.caption)
+                    }
+
+                    HStack {
+                        Text("종료")
+                            .frame(width: 60, alignment: .leading)
+                        Slider(value: $viewModel.endTime, in: min(viewModel.startTime + 0.1, viewModel.duration)...viewModel.duration)
+                        Text(formatTime(viewModel.endTime))
+                            .frame(width: 50)
+                            .font(.caption)
+                    }
+
+                    Text("선택된 구간: \(formatTime(viewModel.endTime - viewModel.startTime))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal)
+            }
+
+            // GIF 설정
+            settingsPanel
+                .padding(.horizontal)
+
+            // GIF 생성 버튼
+            Button(action: {
+                viewModel.createGIF()
+            }) {
+                Label("GIF 만들기", systemImage: "sparkles")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal)
+
+            // 다른 비디오 선택 버튼
+            PhotosPicker(
+                selection: $viewModel.selectedVideoItem,
+                matching: .videos
+            ) {
+                HStack {
+                    Image(systemName: "arrow.triangle.2.circlepath.video")
+                    Text("다른 비디오 선택")
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(SecondaryButtonStyle())
+            .padding(.horizontal)
+        }
+        .padding(.vertical)
+    }
+
+    var settingsPanel: some View {
+        VStack(spacing: 15) {
+            // 프레임 레이트
+            HStack {
+                Text("프레임 수")
+                    .font(.subheadline)
+                Spacer()
+                Text("\(viewModel.frameRate) 프레임")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Slider(value: Binding(
+                get: { Double(viewModel.frameRate) },
+                set: { viewModel.frameRate = Int($0) }
+            ), in: 5...45, step: 1)
+
+            Divider()
+
+            // 프레임 간 딜레이
+            HStack {
+                Text("프레임 간 딜레이")
+                    .font(.subheadline)
+                Spacer()
+                Text("\(String(format: "%.2f", viewModel.frameDelay))초")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Slider(value: $viewModel.frameDelay, in: 0.03...0.5, step: 0.01)
+
+            Text("총 재생시간: \(String(format: "%.1f", Double(viewModel.frameRate) * viewModel.frameDelay))초")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            Divider()
+
+            // 프레임 비율
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: "aspectratio")
+                        .foregroundStyle(.tint)
+                    Text("프레임 비율")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
+
+                Picker("프레임 비율", selection: $viewModel.aspectRatio) {
+                    ForEach(AspectRatio.allCases) { ratio in
+                        Text(ratio.rawValue).tag(ratio)
+                    }
+                }
+                .pickerStyle(.menu)
+                .tint(Color.appPrimary)
+            }
+
+            Divider()
+
+            // 크기 애니메이션
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .foregroundStyle(.tint)
+                    Text("크기 애니메이션")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
+
+                Picker("크기 애니메이션", selection: $viewModel.scaleAnimation) {
+                    ForEach(ScaleAnimation.allCases) { animation in
+                        Text(animation.rawValue).tag(animation)
+                    }
+                }
+                .pickerStyle(.menu)
+                .tint(Color.appPrimary)
+            }
+
+            Divider()
+
+            // 배경 제거
+            Toggle(isOn: $viewModel.removeBackground) {
+                HStack(spacing: 8) {
+                    Image(systemName: "scissors")
+                        .foregroundStyle(.tint)
+                    Text("배경 제거")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
+            }
+            .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private func formatTime(_ time: Double) -> String {

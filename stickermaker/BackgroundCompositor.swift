@@ -220,177 +220,21 @@ struct BackgroundCompositorView: View {
 
     var body: some View {
         NavigationStack {
-            content
-                .navigationTitle("배경 합성")
-                .navigationBarTitleDisplayMode(.inline)
-                .alert("저장 완료", isPresented: $showSaveAlert) {
-                    Button("확인", role: .cancel) { }
-                } message: {
-                    Text("합성된 이미지가 사진 라이브러리에 저장되었습니다.")
-                }
-        }
-        .onChange(of: viewModel.selectedPersonItem) { _, _ in
-            Task {
-                await viewModel.loadPersonImage()
-            }
-        }
-        .onChange(of: viewModel.selectedBackgroundItem) { _, _ in
-            Task {
-                await viewModel.loadBackgroundImage()
-            }
-        }
-    }
+            GeometryReader { geometry in
+                let isLandscape = geometry.size.width > geometry.size.height
 
-    @ViewBuilder
-    var content: some View {
-        ScrollView {
-            VStack(spacing: Spacing.lg) {
-                if let composedImage = viewModel.composedImage {
-                        // 합성된 이미지 미리보기
-                        CardView {
-                            Image(uiImage: composedImage)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(maxHeight: 400)
-                                .padding(Spacing.md)
+                ScrollView {
+                    if let composedImage = viewModel.composedImage {
+                        if isLandscape {
+                            landscapeComposedView(image: composedImage, geometry: geometry)
+                        } else {
+                            portraitComposedView(image: composedImage)
                         }
-                        .padding(.horizontal, Spacing.md)
-
-                        // 조정 컨트롤
-                        CardView {
-                            VStack(spacing: Spacing.md) {
-                                CustomSlider(
-                                    title: "사람 크기",
-                                    value: $viewModel.personScale,
-                                    range: 0.3...2.0,
-                                    step: 0.1,
-                                    unit: "배"
-                                )
-                                .onChange(of: viewModel.personScale) { _, _ in
-                                    viewModel.composeImages()
-                                }
-
-                                CustomSlider(
-                                    title: "가로 위치",
-                                    value: $viewModel.personOffsetXPercent,
-                                    range: -50...50,
-                                    step: 1,
-                                    unit: "%"
-                                )
-                                .onChange(of: viewModel.personOffsetXPercent) { _, _ in
-                                    viewModel.composeImages()
-                                }
-
-                                CustomSlider(
-                                    title: "세로 위치",
-                                    value: $viewModel.personOffsetYPercent,
-                                    range: -50...50,
-                                    step: 1,
-                                    unit: "%"
-                                )
-                                .onChange(of: viewModel.personOffsetYPercent) { _, _ in
-                                    viewModel.composeImages()
-                                }
-                            }
-                            .padding(Spacing.md)
-                        }
-                        .padding(.horizontal, Spacing.md)
-
-                        // 액션 버튼
-                        VStack(spacing: Spacing.md) {
-                            Button(action: {
-                                Task {
-                                    await viewModel.saveComposedImage()
-                                    if viewModel.errorMessage == nil {
-                                        showSaveAlert = true
-                                    }
-                                }
-                            }) {
-                                if viewModel.isSaving {
-                                    ProgressView()
-                                        .frame(maxWidth: .infinity)
-                                } else {
-                                    HStack {
-                                        Image(systemName: "arrow.down.circle.fill")
-                                        Text("저장")
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                }
-                            }
-                            .buttonStyle(PrimaryButtonStyle())
-                            .disabled(viewModel.isSaving)
-
-                            Button(action: {
-                                viewModel.reset()
-                            }) {
-                                HStack {
-                                    Image(systemName: "arrow.clockwise")
-                                    Text("다시 만들기")
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(SecondaryButtonStyle())
-                        }
-                        .padding(.horizontal, Spacing.md)
                     } else {
-                        // 이미지 선택 화면
-                        EmptyStateView(
-                            icon: "photo.stack",
-                            title: "배경 합성",
-                            message: "사람 사진과 배경 사진을\n선택하여 합성하세요"
-                        )
-
-                        VStack(spacing: Spacing.md) {
-                            // 사람 이미지 선택
-                            VStack(spacing: Spacing.sm) {
-                                Text("1. 사람 사진 선택")
-                                    .font(.appSubheadline)
-                                    .foregroundColor(.secondary)
-
-                                PhotosPicker(
-                                    selection: $viewModel.selectedPersonItem,
-                                    matching: .images
-                                ) {
-                                    HStack {
-                                        Image(systemName: viewModel.personWithoutBg != nil ? "checkmark.circle.fill" : "person.crop.circle")
-                                        Text(viewModel.personWithoutBg != nil ? "사람 선택됨" : "사람 선택")
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(SecondaryButtonStyle())
-                            }
-
-                            // 배경 이미지 선택
-                            VStack(spacing: Spacing.sm) {
-                                Text("2. 배경 사진 선택")
-                                    .font(.appSubheadline)
-                                    .foregroundColor(.secondary)
-
-                                PhotosPicker(
-                                    selection: $viewModel.selectedBackgroundItem,
-                                    matching: .images
-                                ) {
-                                    HStack {
-                                        Image(systemName: viewModel.backgroundImage != nil ? "checkmark.circle.fill" : "photo")
-                                        Text(viewModel.backgroundImage != nil ? "배경 선택됨" : "배경 선택")
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(SecondaryButtonStyle())
-                            }
-                        }
-                        .padding(.horizontal, Spacing.lg)
-
-                        if viewModel.isProcessing {
-                            VStack(spacing: Spacing.md) {
-                                ProgressView()
-                                    .scaleEffect(1.5)
-                                    .tint(Color.appPrimary)
-                                Text("배경 제거 중...")
-                                    .font(.appBody)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(Spacing.xl)
+                        if isLandscape {
+                            landscapeEmptyView(geometry: geometry)
+                        } else {
+                            portraitEmptyView
                         }
                     }
 
@@ -406,5 +250,340 @@ struct BackgroundCompositorView: View {
                 }
                 .padding(.vertical, Spacing.md)
             }
+            .navigationTitle("배경 합성")
+            .navigationBarTitleDisplayMode(.inline)
+            .alert("저장 완료", isPresented: $showSaveAlert) {
+                Button("확인", role: .cancel) { }
+            } message: {
+                Text("합성된 이미지가 사진 라이브러리에 저장되었습니다.")
+            }
+        }
+        .onChange(of: viewModel.selectedPersonItem) { _, _ in
+            Task {
+                await viewModel.loadPersonImage()
+            }
+        }
+        .onChange(of: viewModel.selectedBackgroundItem) { _, _ in
+            Task {
+                await viewModel.loadBackgroundImage()
+            }
+        }
+    }
+
+    func landscapeComposedView(image: UIImage, geometry: GeometryProxy) -> some View {
+        HStack(alignment: .top, spacing: Spacing.lg) {
+            // 왼쪽: 이미지 미리보기 (40%)
+            CardView {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .padding(Spacing.md)
+            }
+            .frame(width: geometry.size.width * 0.35)
+            .padding(.leading, Spacing.md)
+
+            // 오른쪽: 컨트롤 패널 (60%)
+            VStack(spacing: Spacing.lg) {
+                CardView {
+                    VStack(spacing: Spacing.md) {
+                        CustomSlider(
+                            title: "사람 크기",
+                            value: $viewModel.personScale,
+                            range: 0.3...2.0,
+                            step: 0.1,
+                            unit: "배"
+                        )
+                        .onChange(of: viewModel.personScale) { _, _ in
+                            viewModel.composeImages()
+                        }
+
+                        CustomSlider(
+                            title: "가로 위치",
+                            value: $viewModel.personOffsetXPercent,
+                            range: -50...50,
+                            step: 1,
+                            unit: "%"
+                        )
+                        .onChange(of: viewModel.personOffsetXPercent) { _, _ in
+                            viewModel.composeImages()
+                        }
+
+                        CustomSlider(
+                            title: "세로 위치",
+                            value: $viewModel.personOffsetYPercent,
+                            range: -50...50,
+                            step: 1,
+                            unit: "%"
+                        )
+                        .onChange(of: viewModel.personOffsetYPercent) { _, _ in
+                            viewModel.composeImages()
+                        }
+                    }
+                    .padding(Spacing.md)
+                }
+
+                VStack(spacing: Spacing.md) {
+                    Button(action: {
+                        Task {
+                            await viewModel.saveComposedImage()
+                            if viewModel.errorMessage == nil {
+                                showSaveAlert = true
+                            }
+                        }
+                    }) {
+                        if viewModel.isSaving {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                        } else {
+                            HStack {
+                                Image(systemName: "arrow.down.circle.fill")
+                                Text("저장")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(viewModel.isSaving)
+
+                    Button(action: {
+                        viewModel.reset()
+                    }) {
+                        HStack {
+                            Image(systemName: "arrow.clockwise")
+                            Text("다시 만들기")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+            .frame(width: geometry.size.width * 0.55)
+            .padding(.trailing, Spacing.md)
+        }
+    }
+
+    func portraitComposedView(image: UIImage) -> some View {
+        VStack(spacing: Spacing.lg) {
+            // 합성된 이미지 미리보기
+            CardView {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxHeight: 400)
+                    .padding(Spacing.md)
+            }
+            .padding(.horizontal, Spacing.md)
+
+            // 조정 컨트롤
+            CardView {
+                VStack(spacing: Spacing.md) {
+                    CustomSlider(
+                        title: "사람 크기",
+                        value: $viewModel.personScale,
+                        range: 0.3...2.0,
+                        step: 0.1,
+                        unit: "배"
+                    )
+                    .onChange(of: viewModel.personScale) { _, _ in
+                        viewModel.composeImages()
+                    }
+
+                    CustomSlider(
+                        title: "가로 위치",
+                        value: $viewModel.personOffsetXPercent,
+                        range: -50...50,
+                        step: 1,
+                        unit: "%"
+                    )
+                    .onChange(of: viewModel.personOffsetXPercent) { _, _ in
+                        viewModel.composeImages()
+                    }
+
+                    CustomSlider(
+                        title: "세로 위치",
+                        value: $viewModel.personOffsetYPercent,
+                        range: -50...50,
+                        step: 1,
+                        unit: "%"
+                    )
+                    .onChange(of: viewModel.personOffsetYPercent) { _, _ in
+                        viewModel.composeImages()
+                    }
+                }
+                .padding(Spacing.md)
+            }
+            .padding(.horizontal, Spacing.md)
+
+            // 액션 버튼
+            VStack(spacing: Spacing.md) {
+                Button(action: {
+                    Task {
+                        await viewModel.saveComposedImage()
+                        if viewModel.errorMessage == nil {
+                            showSaveAlert = true
+                        }
+                    }
+                }) {
+                    if viewModel.isSaving {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        HStack {
+                            Image(systemName: "arrow.down.circle.fill")
+                            Text("저장")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(viewModel.isSaving)
+
+                Button(action: {
+                    viewModel.reset()
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.clockwise")
+                        Text("다시 만들기")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
+            .padding(.horizontal, Spacing.md)
+        }
+    }
+
+    func landscapeEmptyView(geometry: GeometryProxy) -> some View {
+        HStack(alignment: .top, spacing: Spacing.lg) {
+            // 왼쪽: Empty State (40%)
+            VStack {
+                EmptyStateView(
+                    icon: "photo.stack",
+                    title: "배경 합성",
+                    message: "사람 사진과 배경 사진을\n선택하여 합성하세요"
+                )
+
+                if viewModel.isProcessing {
+                    VStack(spacing: Spacing.md) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .tint(Color.appPrimary)
+                        Text("배경 제거 중...")
+                            .font(.appBody)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(Spacing.xl)
+                }
+            }
+            .frame(width: geometry.size.width * 0.35)
+            .padding(.leading, Spacing.md)
+
+            // 오른쪽: 선택 버튼 (60%)
+            VStack(spacing: Spacing.md) {
+                // 사람 이미지 선택
+                VStack(spacing: Spacing.sm) {
+                    Text("1. 사람 사진 선택")
+                        .font(.appSubheadline)
+                        .foregroundColor(.secondary)
+
+                    PhotosPicker(
+                        selection: $viewModel.selectedPersonItem,
+                        matching: .images
+                    ) {
+                        HStack {
+                            Image(systemName: viewModel.personWithoutBg != nil ? "checkmark.circle.fill" : "person.crop.circle")
+                            Text(viewModel.personWithoutBg != nil ? "사람 선택됨" : "사람 선택")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                }
+
+                // 배경 이미지 선택
+                VStack(spacing: Spacing.sm) {
+                    Text("2. 배경 사진 선택")
+                        .font(.appSubheadline)
+                        .foregroundColor(.secondary)
+
+                    PhotosPicker(
+                        selection: $viewModel.selectedBackgroundItem,
+                        matching: .images
+                    ) {
+                        HStack {
+                            Image(systemName: viewModel.backgroundImage != nil ? "checkmark.circle.fill" : "photo")
+                            Text(viewModel.backgroundImage != nil ? "배경 선택됨" : "배경 선택")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+            .frame(width: geometry.size.width * 0.55)
+            .padding(.trailing, Spacing.md)
+        }
+    }
+
+    var portraitEmptyView: some View {
+        VStack(spacing: Spacing.lg) {
+            // 이미지 선택 화면
+            EmptyStateView(
+                icon: "photo.stack",
+                title: "배경 합성",
+                message: "사람 사진과 배경 사진을\n선택하여 합성하세요"
+            )
+
+            VStack(spacing: Spacing.md) {
+                // 사람 이미지 선택
+                VStack(spacing: Spacing.sm) {
+                    Text("1. 사람 사진 선택")
+                        .font(.appSubheadline)
+                        .foregroundColor(.secondary)
+
+                    PhotosPicker(
+                        selection: $viewModel.selectedPersonItem,
+                        matching: .images
+                    ) {
+                        HStack {
+                            Image(systemName: viewModel.personWithoutBg != nil ? "checkmark.circle.fill" : "person.crop.circle")
+                            Text(viewModel.personWithoutBg != nil ? "사람 선택됨" : "사람 선택")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                }
+
+                // 배경 이미지 선택
+                VStack(spacing: Spacing.sm) {
+                    Text("2. 배경 사진 선택")
+                        .font(.appSubheadline)
+                        .foregroundColor(.secondary)
+
+                    PhotosPicker(
+                        selection: $viewModel.selectedBackgroundItem,
+                        matching: .images
+                    ) {
+                        HStack {
+                            Image(systemName: viewModel.backgroundImage != nil ? "checkmark.circle.fill" : "photo")
+                            Text(viewModel.backgroundImage != nil ? "배경 선택됨" : "배경 선택")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+            .padding(.horizontal, Spacing.lg)
+
+            if viewModel.isProcessing {
+                VStack(spacing: Spacing.md) {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .tint(Color.appPrimary)
+                    Text("배경 제거 중...")
+                        .font(.appBody)
+                        .foregroundColor(.secondary)
+                }
+                .padding(Spacing.xl)
+            }
+        }
     }
 }
