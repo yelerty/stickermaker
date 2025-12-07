@@ -6,14 +6,26 @@
 //
 
 import SwiftUI
+import Foundation
+import Combine
 
 // MARK: - Colors
 extension Color {
-    static let appPrimary = Color(red: 0.4, green: 0.5, blue: 1.0)
-    static let appSecondary = Color(red: 0.8, green: 0.4, blue: 0.9)
+    // Note: appPrimary, appSecondary, appAccent are auto-generated from Assets.xcassets
     static let appBackground = Color(uiColor: .systemGroupedBackground)
     static let appCardBackground = Color(uiColor: .secondarySystemGroupedBackground)
-    static let appAccent = Color(red: 0.3, green: 0.7, blue: 0.9)
+
+    // Helper initializer for light/dark mode colors
+    init(light: Color, dark: Color) {
+        self.init(UIColor { traitCollection in
+            switch traitCollection.userInterfaceStyle {
+            case .dark:
+                return UIColor(dark)
+            default:
+                return UIColor(light)
+            }
+        })
+    }
 }
 
 // MARK: - Typography
@@ -225,5 +237,73 @@ struct EmptyStateView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Localization Helper
+extension String {
+    var localized: String {
+        return NSLocalizedString(self, comment: "")
+    }
+
+    func localized(with arguments: CVarArg...) -> String {
+        return String(format: NSLocalizedString(self, comment: ""), arguments: arguments)
+    }
+}
+
+// MARK: - Theme Manager
+enum AppTheme: String, CaseIterable {
+    case system = "System"
+    case light = "Light"
+    case dark = "Dark"
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system:
+            return nil
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .system:
+            return "circle.lefthalf.filled"
+        case .light:
+            return "sun.max.fill"
+        case .dark:
+            return "moon.fill"
+        }
+    }
+}
+
+class ThemeManager: ObservableObject {
+    @Published var currentTheme: AppTheme {
+        didSet {
+            UserDefaults.standard.set(currentTheme.rawValue, forKey: "selectedTheme")
+        }
+    }
+
+    init() {
+        if let savedTheme = UserDefaults.standard.string(forKey: "selectedTheme"),
+           let theme = AppTheme(rawValue: savedTheme) {
+            self.currentTheme = theme
+        } else {
+            self.currentTheme = .system
+        }
+    }
+
+    func toggleTheme() {
+        switch currentTheme {
+        case .system:
+            currentTheme = .light
+        case .light:
+            currentTheme = .dark
+        case .dark:
+            currentTheme = .system
+        }
     }
 }

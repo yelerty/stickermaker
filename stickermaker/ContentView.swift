@@ -10,38 +10,63 @@ import PhotosUI
 
 struct ContentView: View {
     @State private var selectedTab = 0
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         TabView(selection: $selectedTab) {
             ImprovedStickerMakerTab()
                 .tabItem {
-                    Label("스티커", systemImage: "photo.badge.plus")
+                    Label("tab.sticker".localized, systemImage: "photo.badge.plus")
                 }
                 .tag(0)
 
             GIFMakerView()
                 .tabItem {
-                    Label("사진 GIF", systemImage: "photo.stack")
+                    Label("tab.photo_gif".localized, systemImage: "photo.stack")
                 }
                 .tag(1)
 
             VideoToGIFView()
                 .tabItem {
-                    Label("비디오 GIF", systemImage: "video.badge.waveform")
+                    Label("tab.video_gif".localized, systemImage: "video.badge.waveform")
                 }
                 .tag(2)
 
             BackgroundCompositorView()
                 .tabItem {
-                    Label("배경 합성", systemImage: "rectangle.on.rectangle")
+                    Label("tab.background".localized, systemImage: "rectangle.on.rectangle")
                 }
                 .tag(3)
 
             StickerPackView()
                 .tabItem {
-                    Label("스티커팩", systemImage: "square.grid.3x3")
+                    Label("tab.sticker_pack".localized, systemImage: "square.grid.3x3")
                 }
                 .tag(4)
+        }
+        .overlay(alignment: .topLeading) {
+            ThemeToggleButton()
+                .padding(.leading, Spacing.md)
+                .padding(.top, 50)
+        }
+    }
+}
+
+struct ThemeToggleButton: View {
+    @EnvironmentObject var themeManager: ThemeManager
+    @State private var showThemeMenu = false
+
+    var body: some View {
+        Button(action: {
+            themeManager.toggleTheme()
+        }) {
+            Image(systemName: themeManager.currentTheme.icon)
+                .font(.system(size: 20))
+                .foregroundColor(.primary)
+                .frame(width: 44, height: 44)
+                .background(Color.appCardBackground)
+                .clipShape(Circle())
+                .shadow(color: .black.opacity(0.1), radius: 5, y: 2)
         }
     }
 }

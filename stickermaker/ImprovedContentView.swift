@@ -43,13 +43,13 @@ struct ImprovedStickerMakerTab: View {
                 }
             }
             .background(Color.appBackground.ignoresSafeArea())
-            .navigationTitle("Sticker Maker")
+            .navigationTitle("sticker.title".localized)
             .navigationBarTitleDisplayMode(isLandscape ? .inline : .large)
             .toolbarTitleDisplayMode(isLandscape ? .inlineLarge : .automatic)
-            .alert("저장 완료", isPresented: $showSaveAlert) {
-                Button("확인", role: .cancel) { }
+            .alert("sticker.saved".localized, isPresented: $showSaveAlert) {
+                Button("button.ok".localized, role: .cancel) { }
             } message: {
-                Text("스티커가 사진 라이브러리에 저장되었습니다.")
+                Text("sticker.saved.message".localized)
             }
             .sheet(isPresented: $showingEditor) {
                 ImageEditorView(viewModel: viewModel)
@@ -132,7 +132,7 @@ struct ImprovedStickerMakerTab: View {
             }) {
                 HStack {
                     Image(systemName: "slider.horizontal.3")
-                    Text("편집하기")
+                    Text("button.edit".localized)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -153,7 +153,7 @@ struct ImprovedStickerMakerTab: View {
                     } else {
                         HStack {
                             Image(systemName: "arrow.down.circle.fill")
-                            Text("저장")
+                            Text("button.save".localized)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -180,7 +180,7 @@ struct ImprovedStickerMakerTab: View {
                     HStack(spacing: 8) {
                         Image(systemName: "scissors")
                             .foregroundStyle(.tint)
-                        Text("배경 제거")
+                        Text("option.remove_background".localized)
                             .font(.appSubheadline)
                             .fontWeight(.medium)
                     }
@@ -201,14 +201,14 @@ struct ImprovedStickerMakerTab: View {
                     HStack(spacing: 8) {
                         Image(systemName: "aspectratio")
                             .foregroundStyle(.tint)
-                        Text("프레임 비율")
+                        Text("option.aspect_ratio".localized)
                             .font(.appSubheadline)
                             .fontWeight(.medium)
                     }
 
-                    Picker("프레임 비율", selection: $viewModel.aspectRatio) {
+                    Picker("option.aspect_ratio".localized, selection: $viewModel.aspectRatio) {
                         ForEach(AspectRatio.allCases) { ratio in
-                            Text(ratio.rawValue).tag(ratio)
+                            Text(ratio.localizedName).tag(ratio)
                         }
                     }
                     .pickerStyle(.menu)
@@ -232,7 +232,7 @@ struct ImprovedStickerMakerTab: View {
                 .scaleEffect(1.5)
                 .tint(Color.appPrimary)
 
-            Text("배경 제거 중...")
+            Text("sticker.processing".localized)
                 .font(.appHeadline)
                 .foregroundColor(.secondary)
         }
@@ -247,8 +247,8 @@ struct ImprovedStickerMakerTab: View {
                 VStack {
                     EmptyStateView(
                         icon: "photo.badge.plus",
-                        title: "스티커 만들기",
-                        message: "사진 또는 비디오를 선택하여\n스티커를 만드세요"
+                        title: "sticker.empty.title".localized,
+                        message: "sticker.empty.message".localized
                     )
 
                     if viewModel.isProcessing {
@@ -256,7 +256,7 @@ struct ImprovedStickerMakerTab: View {
                             ProgressView()
                                 .scaleEffect(1.5)
                                 .tint(Color.appPrimary)
-                            Text("배경 제거 중...")
+                            Text("sticker.processing".localized)
                                 .font(.appBody)
                                 .foregroundColor(.secondary)
                         }
@@ -270,7 +270,7 @@ struct ImprovedStickerMakerTab: View {
                 VStack(spacing: Spacing.md) {
                     // 사진 선택
                     VStack(spacing: Spacing.sm) {
-                        Text("1. 사진 선택")
+                        Text("sticker.step.photo".localized)
                             .font(.appSubheadline)
                             .foregroundColor(.secondary)
 
@@ -280,7 +280,7 @@ struct ImprovedStickerMakerTab: View {
                         ) {
                             HStack {
                                 Image(systemName: "photo.on.rectangle.angled")
-                                Text("사진 선택")
+                                Text("button.select_photo".localized)
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -289,7 +289,7 @@ struct ImprovedStickerMakerTab: View {
 
                     // 비디오 선택
                     VStack(spacing: Spacing.sm) {
-                        Text("2. 비디오 선택")
+                        Text("sticker.step.video".localized)
                             .font(.appSubheadline)
                             .foregroundColor(.secondary)
 
@@ -299,7 +299,7 @@ struct ImprovedStickerMakerTab: View {
                         ) {
                             HStack {
                                 Image(systemName: "video.badge.plus")
-                                Text("비디오 선택")
+                                Text("button.select_video".localized)
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -316,8 +316,8 @@ struct ImprovedStickerMakerTab: View {
         VStack(spacing: Spacing.xl) {
             EmptyStateView(
                 icon: "photo.badge.plus",
-                title: "스티커 만들기",
-                message: "사진 또는 비디오를 선택하여\n스티커를 만드세요"
+                title: "sticker.empty.title".localized,
+                message: "sticker.empty.message".localized
             )
 
             VStack(spacing: Spacing.md) {
@@ -327,7 +327,7 @@ struct ImprovedStickerMakerTab: View {
                 ) {
                     HStack {
                         Image(systemName: "photo.on.rectangle.angled")
-                        Text("사진 선택")
+                        Text("button.select_photo".localized)
                     }
                     .frame(maxWidth: 300)
                 }
@@ -340,7 +340,7 @@ struct ImprovedStickerMakerTab: View {
                 ) {
                     HStack {
                         Image(systemName: "video.badge.plus")
-                        Text("비디오 선택")
+                        Text("button.select_video".localized)
                     }
                     .frame(maxWidth: 300)
                 }

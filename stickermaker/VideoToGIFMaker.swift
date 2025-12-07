@@ -28,6 +28,19 @@ enum AspectRatio: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    var localizedName: String {
+        switch self {
+        case .original: return "option.original".localized
+        case .square: return "option.square".localized
+        case .vertical_9_16: return "9:16"
+        case .vertical_4_5: return "4:5"
+        case .vertical_5_7: return "5:7"
+        case .vertical_3_4: return "3:4"
+        case .vertical_3_5: return "3:5"
+        case .vertical_2_3: return "2:3"
+        }
+    }
+
     var ratio: CGFloat? {
         switch self {
         case .original: return nil

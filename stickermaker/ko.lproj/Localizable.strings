@@ -1,0 +1,107 @@
+/*
+  Localizable.strings (Korean)
+  stickermaker
+*/
+
+// Tab Titles
+"tab.sticker" = "스티커";
+"tab.photo_gif" = "사진 GIF";
+"tab.video_gif" = "비디오 GIF";
+"tab.background" = "배경 합성";
+"tab.sticker_pack" = "스티커팩";
+
+// Common
+"button.select_photo" = "사진 선택";
+"button.select_video" = "비디오 선택";
+"button.save" = "저장";
+"button.share" = "공유";
+"button.reset" = "다시 선택";
+"button.edit" = "편집하기";
+"button.cancel" = "취소";
+"button.ok" = "확인";
+"button.add" = "추가";
+"button.create" = "만들기";
+"button.export" = "내보내기";
+
+// Sticker Maker
+"sticker.title" = "Sticker Maker";
+"sticker.empty.title" = "스티커 만들기";
+"sticker.empty.message" = "사진 또는 비디오를 선택하여\n스티커를 만드세요";
+"sticker.processing" = "배경 제거 중...";
+"sticker.saved" = "저장 완료";
+"sticker.saved.message" = "스티커가 사진 라이브러리에 저장되었습니다.";
+"sticker.step.photo" = "1. 사진 선택";
+"sticker.step.video" = "2. 비디오 선택";
+
+// Options
+"option.remove_background" = "배경 제거";
+"option.aspect_ratio" = "프레임 비율";
+"option.original" = "원본";
+"option.square" = "정사각형 (1:1)";
+"option.portrait" = "세로 (9:16)";
+"option.landscape" = "가로 (16:9)";
+
+// GIF Maker
+"gif.title" = "GIF 만들기";
+"gif.empty.title" = "사진으로 GIF 만들기";
+"gif.empty.message" = "여러 장의 사진을 선택하여\n움직이는 GIF를 만드세요";
+"gif.photos_selected" = "%d장 선택됨";
+"gif.creating" = "GIF 생성 중...";
+"gif.created" = "GIF 생성 완료";
+"gif.created.message" = "GIF가 사진 라이브러리에 저장되었습니다.";
+"gif.speed" = "재생 속도";
+"gif.quality" = "품질";
+
+// Video to GIF
+"video_gif.title" = "비디오 → GIF";
+"video_gif.empty.title" = "비디오를 GIF로";
+"video_gif.empty.message" = "비디오를 선택하여\nGIF로 변환하세요";
+"video_gif.processing" = "처리 중...";
+"video_gif.frame_selection" = "프레임 선택";
+"video_gif.start_time" = "시작 시간";
+"video_gif.end_time" = "종료 시간";
+"video_gif.duration" = "길이";
+"video_gif.frame_rate" = "프레임 속도";
+"video_gif.scale_animation" = "스케일 애니메이션";
+"video_gif.scale.none" = "없음";
+"video_gif.scale.zoom_in" = "줌인";
+"video_gif.scale.zoom_out" = "줌아웃";
+
+// Background Compositor
+"bg.title" = "배경 합성";
+"bg.empty.title" = "배경 합성";
+"bg.empty.message" = "사람 사진과 배경 사진을\n선택하여 합성하세요";
+"bg.step.person" = "1. 사람 사진";
+"bg.step.background" = "2. 배경 사진";
+"bg.processing" = "배경 제거 중...";
+"bg.compositing" = "합성 중...";
+"bg.person_size" = "사람 크기";
+"bg.person_position" = "사람 위치";
+
+// Sticker Pack
+"pack.title" = "스티커팩 관리";
+"pack.name" = "스티커팩 이름";
+"pack.name.default" = "내 스티커팩";
+"pack.empty.title" = "스티커를 추가해보세요";
+"pack.add_sticker" = "스티커로 추가";
+"pack.create_sticker" = "스티커 만들기";
+"pack.share_pack" = "스티커팩 공유";
+"pack.export_failed" = "스티커팩 내보내기 실패";
+
+// Image Editor
+"editor.title" = "이미지 편집";
+"editor.brightness" = "밝기";
+"editor.contrast" = "대비";
+"editor.saturation" = "채도";
+"editor.scale" = "크기";
+"editor.rotation" = "회전";
+"editor.flip_horizontal" = "좌우 반전";
+"editor.flip_vertical" = "상하 반전";
+
+// Errors
+"error.load_failed" = "불러오기 실패";
+"error.save_failed" = "저장 실패";
+"error.processing_failed" = "처리 실패";
+"error.no_image" = "이미지를 불러올 수 없습니다.";
+"error.no_video" = "비디오를 불러올 수 없습니다.";
+"error.cancelled" = "작업이 취소되었습니다.";
