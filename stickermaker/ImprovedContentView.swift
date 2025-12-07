@@ -13,6 +13,7 @@ struct ImprovedStickerMakerTab: View {
     @State private var showSaveAlert = false
     @State private var showingEditor = false
     @State private var isLandscape = false
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         NavigationStack {
@@ -44,8 +45,12 @@ struct ImprovedStickerMakerTab: View {
             }
             .background(Color.appBackground.ignoresSafeArea())
             .navigationTitle("sticker.title".localized)
-            .navigationBarTitleDisplayMode(isLandscape ? .inline : .large)
-            .toolbarTitleDisplayMode(isLandscape ? .inlineLarge : .automatic)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    ThemeToggleButton()
+                }
+            }
             .alert("sticker.saved".localized, isPresented: $showSaveAlert) {
                 Button("button.ok".localized, role: .cancel) { }
             } message: {

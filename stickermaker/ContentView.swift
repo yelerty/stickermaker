@@ -44,11 +44,7 @@ struct ContentView: View {
                 }
                 .tag(4)
         }
-        .overlay(alignment: .topLeading) {
-            ThemeToggleButton()
-                .padding(.leading, Spacing.md)
-                .padding(.top, 50)
-        }
+        .environmentObject(themeManager)
     }
 }
 

@@ -224,6 +224,7 @@ class GIFMakerViewModel: ObservableObject {
 struct GIFMakerView: View {
     @StateObject private var viewModel = GIFMakerViewModel()
     @State private var showingSaveAlert = false
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         NavigationStack {
@@ -389,7 +390,11 @@ struct GIFMakerView: View {
             }
             .navigationTitle("GIF 만들기")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarTitleDisplayMode(.inlineLarge)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    ThemeToggleButton()
+                }
+            }
             .alert("저장 완료", isPresented: $showingSaveAlert) {
                 Button("확인", role: .cancel) { }
             } message: {

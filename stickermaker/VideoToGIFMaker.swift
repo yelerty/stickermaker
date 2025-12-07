@@ -532,6 +532,7 @@ struct VideoTransferable: Transferable {
 struct VideoToGIFView: View {
     @StateObject private var viewModel = VideoToGIFViewModel()
     @State private var showingSaveAlert = false
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         NavigationStack {
@@ -656,7 +657,11 @@ struct VideoToGIFView: View {
             }
             .navigationTitle("비디오 → GIF")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarTitleDisplayMode(.inlineLarge)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    ThemeToggleButton()
+                }
+            }
             .alert("저장 완료", isPresented: $showingSaveAlert) {
                 Button("확인", role: .cancel) { }
             } message: {

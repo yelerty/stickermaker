@@ -251,6 +251,7 @@ class BackgroundCompositorViewModel: ObservableObject {
 struct BackgroundCompositorView: View {
     @StateObject private var viewModel = BackgroundCompositorViewModel()
     @State private var showSaveAlert = false
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         NavigationStack {
@@ -286,7 +287,11 @@ struct BackgroundCompositorView: View {
             }
             .navigationTitle("배경 합성")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarTitleDisplayMode(.inlineLarge)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    ThemeToggleButton()
+                }
+            }
             .alert("저장 완료", isPresented: $showSaveAlert) {
                 Button("확인", role: .cancel) { }
             } message: {

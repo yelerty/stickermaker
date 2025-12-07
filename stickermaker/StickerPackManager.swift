@@ -66,6 +66,7 @@ struct StickerPackView: View {
     @StateObject private var manager = StickerPackManager()
     @State private var showingImagePicker = false
     @State private var showingExportSheet = false
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var exportURL: URL?
 
     var body: some View {
@@ -122,8 +123,10 @@ struct StickerPackView: View {
             }
             .navigationTitle("스티커팩 관리")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    ThemeToggleButton()
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: {
                         showingImagePicker = true
@@ -215,7 +218,6 @@ struct StickerPickerView: View {
             }
             .navigationTitle("스티커 만들기")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("취소") {
