@@ -455,7 +455,11 @@ struct BackgroundCompositorView: View {
     }
 
     func landscapeEmptyView(geometry: GeometryProxy) -> some View {
-        HStack(alignment: .top, spacing: Spacing.lg) {
+        let hasPersonImage = viewModel.personWithoutBg != nil
+        let hasBackgroundImage = viewModel.backgroundImage != nil
+        let isProcessing = viewModel.isProcessing
+
+        return HStack(alignment: .top, spacing: Spacing.lg) {
             // 왼쪽: Empty State (40%)
             VStack {
                 EmptyStateView(
@@ -464,7 +468,7 @@ struct BackgroundCompositorView: View {
                     message: "사람 사진과 배경 사진을\n선택하여 합성하세요"
                 )
 
-                if viewModel.isProcessing {
+                if isProcessing {
                     VStack(spacing: Spacing.md) {
                         ProgressView()
                             .scaleEffect(1.5)
@@ -492,8 +496,8 @@ struct BackgroundCompositorView: View {
                         matching: .images
                     ) {
                         HStack {
-                            Image(systemName: viewModel.personWithoutBg != nil ? "checkmark.circle.fill" : "person.crop.circle")
-                            Text(viewModel.personWithoutBg != nil ? "사람 선택됨" : "사람 선택")
+                            Image(systemName: hasPersonImage ? "checkmark.circle.fill" : "person.crop.circle")
+                            Text(hasPersonImage ? "사람 선택됨" : "사람 선택")
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -511,8 +515,8 @@ struct BackgroundCompositorView: View {
                         matching: .images
                     ) {
                         HStack {
-                            Image(systemName: viewModel.backgroundImage != nil ? "checkmark.circle.fill" : "photo")
-                            Text(viewModel.backgroundImage != nil ? "배경 선택됨" : "배경 선택")
+                            Image(systemName: hasBackgroundImage ? "checkmark.circle.fill" : "photo")
+                            Text(hasBackgroundImage ? "배경 선택됨" : "배경 선택")
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -525,7 +529,11 @@ struct BackgroundCompositorView: View {
     }
 
     var portraitEmptyView: some View {
-        VStack(spacing: Spacing.lg) {
+        let hasPersonImage = viewModel.personWithoutBg != nil
+        let hasBackgroundImage = viewModel.backgroundImage != nil
+        let isProcessing = viewModel.isProcessing
+
+        return VStack(spacing: Spacing.lg) {
             // 이미지 선택 화면
             EmptyStateView(
                 icon: "photo.stack",
@@ -545,8 +553,8 @@ struct BackgroundCompositorView: View {
                         matching: .images
                     ) {
                         HStack {
-                            Image(systemName: viewModel.personWithoutBg != nil ? "checkmark.circle.fill" : "person.crop.circle")
-                            Text(viewModel.personWithoutBg != nil ? "사람 선택됨" : "사람 선택")
+                            Image(systemName: hasPersonImage ? "checkmark.circle.fill" : "person.crop.circle")
+                            Text(hasPersonImage ? "사람 선택됨" : "사람 선택")
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -564,8 +572,8 @@ struct BackgroundCompositorView: View {
                         matching: .images
                     ) {
                         HStack {
-                            Image(systemName: viewModel.backgroundImage != nil ? "checkmark.circle.fill" : "photo")
-                            Text(viewModel.backgroundImage != nil ? "배경 선택됨" : "배경 선택")
+                            Image(systemName: hasBackgroundImage ? "checkmark.circle.fill" : "photo")
+                            Text(hasBackgroundImage ? "배경 선택됨" : "배경 선택")
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -574,7 +582,7 @@ struct BackgroundCompositorView: View {
             }
             .padding(.horizontal, Spacing.lg)
 
-            if viewModel.isProcessing {
+            if isProcessing {
                 VStack(spacing: Spacing.md) {
                     ProgressView()
                         .scaleEffect(1.5)

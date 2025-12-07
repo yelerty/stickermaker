@@ -224,7 +224,7 @@ class StickerViewModel: ObservableObject {
                 return
             }
 
-            let asset = AVAsset(url: movie.url)
+            let asset = AVURLAsset(url: movie.url)
             let duration = try await asset.load(.duration)
             let durationSeconds = CMTimeGetSeconds(duration)
 
@@ -248,14 +248,26 @@ class StickerViewModel: ObservableObject {
         guard let videoURL = videoURL else { return }
 
         do {
-            let asset = AVAsset(url: videoURL)
+            let asset = AVURLAsset(url: videoURL)
             let imageGenerator = AVAssetImageGenerator(asset: asset)
             imageGenerator.appliesPreferredTrackTransform = true
             imageGenerator.requestedTimeToleranceBefore = .zero
             imageGenerator.requestedTimeToleranceAfter = .zero
 
             let time = CMTime(seconds: selectedTime, preferredTimescale: 600)
-            let cgImage = try imageGenerator.copyCGImage(at: time, actualTime: nil)
+
+            let cgImage = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CGImage, Error>) in
+                imageGenerator.generateCGImageAsynchronously(for: time) { cgImage, actualTime, error in
+                    if let error = error {
+                        continuation.resume(throwing: error)
+                    } else if let cgImage = cgImage {
+                        continuation.resume(returning: cgImage)
+                    } else {
+                        continuation.resume(throwing: NSError(domain: "StickerViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to generate image"]))
+                    }
+                }
+            }
+
             let image = UIImage(cgImage: cgImage)
 
             selectedImage = image

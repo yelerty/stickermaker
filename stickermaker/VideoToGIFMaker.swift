@@ -111,7 +111,7 @@ class VideoToGIFViewModel: ObservableObject {
                 return
             }
 
-            let asset = AVAsset(url: movie.url)
+            let asset = AVURLAsset(url: movie.url)
             self.asset = asset
 
             let durationValue = try await asset.load(.duration)
@@ -140,15 +140,18 @@ class VideoToGIFViewModel: ObservableObject {
         let imageGenerator = AVAssetImageGenerator(asset: asset)
         imageGenerator.appliesPreferredTrackTransform = true
 
-        do {
-            let time = CMTime(seconds: startTime, preferredTimescale: 600)
-            let cgImage = try imageGenerator.copyCGImage(at: time, actualTime: nil)
+        let time = CMTime(seconds: startTime, preferredTimescale: 600)
+        imageGenerator.generateCGImageAsynchronously(for: time) { cgImage, actualTime, error in
+            if let error = error {
+                print("썸네일 생성 실패: \(error)")
+                return
+            }
 
-            await MainActor.run {
+            guard let cgImage = cgImage else { return }
+
+            Task { @MainActor in
                 self.thumbnailImage = UIImage(cgImage: cgImage)
             }
-        } catch {
-            print("썸네일 생성 실패: \(error)")
         }
     }
 
@@ -243,7 +246,18 @@ class VideoToGIFViewModel: ObservableObject {
             let time = CMTime(seconds: timeValue, preferredTimescale: 600)
 
             do {
-                let cgImage = try imageGenerator.copyCGImage(at: time, actualTime: nil)
+                let cgImage = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CGImage, Error>) in
+                    imageGenerator.generateCGImageAsynchronously(for: time) { cgImage, actualTime, error in
+                        if let error = error {
+                            continuation.resume(throwing: error)
+                        } else if let cgImage = cgImage {
+                            continuation.resume(returning: cgImage)
+                        } else {
+                            continuation.resume(throwing: NSError(domain: "VideoToGIFMaker", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to generate image"]))
+                        }
+                    }
+                }
+
                 var image = UIImage(cgImage: cgImage)
 
                 // 비율에 맞게 이미지 크롭
