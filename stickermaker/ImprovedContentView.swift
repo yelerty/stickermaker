@@ -27,7 +27,11 @@ struct ImprovedStickerMakerTab: View {
                     } else if viewModel.isProcessing {
                         processingView
                     } else {
-                        emptyStateView
+                        if isLandscape {
+                            landscapeEmptyStateView
+                        } else {
+                            emptyStateView
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -233,6 +237,47 @@ struct ImprovedStickerMakerTab: View {
         }
         .frame(maxHeight: .infinity)
         .padding(Spacing.xxl)
+    }
+
+    var landscapeEmptyStateView: some View {
+        VStack(spacing: Spacing.lg) {
+            EmptyStateView(
+                icon: "photo.badge.plus",
+                title: "스티커 만들기",
+                message: "사진 또는 비디오를 선택하여\n스티커를 만드세요"
+            )
+
+            HStack(spacing: Spacing.lg) {
+                PhotosPicker(
+                    selection: $viewModel.selectedPhotoItem,
+                    matching: .images
+                ) {
+                    VStack(spacing: Spacing.sm) {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .font(.system(size: 40))
+                        Text("사진 선택")
+                            .font(.appHeadline)
+                    }
+                    .frame(width: 200, height: 120)
+                }
+                .buttonStyle(PrimaryButtonStyle())
+
+                PhotosPicker(
+                    selection: $viewModel.selectedVideoItem,
+                    matching: .videos
+                ) {
+                    VStack(spacing: Spacing.sm) {
+                        Image(systemName: "video.badge.plus")
+                            .font(.system(size: 40))
+                        Text("비디오 선택")
+                            .font(.appHeadline)
+                    }
+                    .frame(width: 200, height: 120)
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
+        }
+        .padding(Spacing.lg)
     }
 
     var emptyStateView: some View {
