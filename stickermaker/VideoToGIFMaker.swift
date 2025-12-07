@@ -613,36 +613,11 @@ struct VideoToGIFView: View {
                     }
                 } else {
                     // 초기 상태
-                    VStack(spacing: 30) {
-                        Image(systemName: "video.badge.waveform")
-                            .font(.system(size: 80))
-                            .foregroundStyle(.tint)
-
-                        VStack(spacing: 10) {
-                            Text("비디오로 GIF 만들기")
-                                .font(.title)
-                                .bold()
-
-                            Text("비디오의 원하는 구간을\n선택하여 GIF로 변환합니다")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                        }
-
-                        PhotosPicker(
-                            selection: $viewModel.selectedVideoItem,
-                            matching: .videos
-                        ) {
-                            Label("비디오 선택", systemImage: "video.badge.plus")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-                        .padding(.horizontal)
+                    if isLandscape {
+                        landscapeEmptyView(geometry: geometry)
+                    } else {
+                        portraitEmptyView
                     }
-                    .frame(maxHeight: .infinity)
                 }
 
                 if let errorMessage = viewModel.errorMessage {
@@ -837,6 +812,77 @@ struct VideoToGIFView: View {
             .padding(.horizontal)
         }
         .padding(.vertical)
+    }
+
+    func landscapeEmptyView(geometry: GeometryProxy) -> some View {
+        HStack(alignment: .top, spacing: Spacing.lg) {
+            // 왼쪽: Empty State (40%)
+            VStack {
+                EmptyStateView(
+                    icon: "video.badge.waveform",
+                    title: "비디오로 GIF 만들기",
+                    message: "비디오의 원하는 구간을\n선택하여 GIF로 변환합니다"
+                )
+            }
+            .frame(width: geometry.size.width * 0.35)
+            .padding(.leading, Spacing.md)
+
+            // 오른쪽: 선택 버튼 (60%)
+            VStack(spacing: Spacing.md) {
+                VStack(spacing: Spacing.sm) {
+                    Text("비디오 선택")
+                        .font(.appSubheadline)
+                        .foregroundColor(.secondary)
+
+                    PhotosPicker(
+                        selection: $viewModel.selectedVideoItem,
+                        matching: .videos
+                    ) {
+                        HStack {
+                            Image(systemName: "video.badge.plus")
+                            Text("비디오 선택")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                }
+            }
+            .frame(width: geometry.size.width * 0.55)
+            .padding(.trailing, Spacing.md)
+        }
+    }
+
+    var portraitEmptyView: some View {
+        VStack(spacing: 30) {
+            Image(systemName: "video.badge.waveform")
+                .font(.system(size: 80))
+                .foregroundStyle(.tint)
+
+            VStack(spacing: 10) {
+                Text("비디오로 GIF 만들기")
+                    .font(.title)
+                    .bold()
+
+                Text("비디오의 원하는 구간을\n선택하여 GIF로 변환합니다")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            PhotosPicker(
+                selection: $viewModel.selectedVideoItem,
+                matching: .videos
+            ) {
+                Label("비디오 선택", systemImage: "video.badge.plus")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .padding(.horizontal)
+        }
+        .frame(maxHeight: .infinity)
     }
 
     var settingsPanel: some View {
