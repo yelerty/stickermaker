@@ -42,10 +42,12 @@ class BackgroundCompositorViewModel: ObservableObject {
                 return
             }
 
-            personImage = image
+            // 메모리 절약을 위해 이미지 리사이즈 (최대 2000px)
+            let resizedImage = resizeImage(image, maxDimension: 2000)
+            personImage = resizedImage
 
             // 배경 제거
-            let processed = try await removeBackground(from: image)
+            let processed = try await removeBackground(from: resizedImage)
             personWithoutBg = processed
 
             // 배경 이미지가 있으면 자동으로 합성
@@ -69,7 +71,9 @@ class BackgroundCompositorViewModel: ObservableObject {
                 return
             }
 
-            backgroundImage = image
+            // 메모리 절약을 위해 이미지 리사이즈 (최대 2000px)
+            let resizedImage = resizeImage(image, maxDimension: 2000)
+            backgroundImage = resizedImage
 
             // 사람 이미지가 있으면 자동으로 합성
             if personWithoutBg != nil {
@@ -161,7 +165,12 @@ class BackgroundCompositorViewModel: ObservableObject {
         let personX = (backgroundSize.width - scaledPersonSize.width) / 2 + offsetX
         let personY = (backgroundSize.height - scaledPersonSize.height) / 2 + offsetY
 
-        let renderer = UIGraphicsImageRenderer(size: backgroundSize)
+        // 메모리 효율적인 렌더링
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1.0  // 스케일을 1.0으로 고정하여 메모리 절약
+        format.opaque = true  // 불투명 배경으로 설정하여 메모리 절약
+
+        let renderer = UIGraphicsImageRenderer(size: backgroundSize, format: format)
         let composed = renderer.image { context in
             // 배경 그리기
             background.draw(in: CGRect(origin: .zero, size: backgroundSize))
@@ -183,7 +192,8 @@ class BackgroundCompositorViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            guard let pngData = image.pngData() else {
+            // JPEG로 저장 (메모리 절약, 품질 0.9)
+            guard let jpegData = image.jpegData(compressionQuality: 0.9) else {
                 errorMessage = "이미지 변환 실패"
                 isSaving = false
                 return
@@ -191,7 +201,12 @@ class BackgroundCompositorViewModel: ObservableObject {
 
             try await PHPhotoLibrary.shared().performChanges {
                 let request = PHAssetCreationRequest.forAsset()
-                request.addResource(with: .photo, data: pngData, options: nil)
+                request.addResource(with: .photo, data: jpegData, options: nil)
+            }
+
+            // 저장 후 메모리 해제
+            await MainActor.run {
+                // 저장 완료 후에도 composedImage는 유지 (UI에서 보여주기 위해)
             }
         } catch {
             errorMessage = "저장 실패: \(error.localizedDescription)"
@@ -211,6 +226,25 @@ class BackgroundCompositorViewModel: ObservableObject {
         personOffsetXPercent = 0.0
         personOffsetYPercent = 0.0
         errorMessage = nil
+    }
+
+    // 메모리 절약을 위한 이미지 리사이즈
+    private func resizeImage(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let size = image.size
+
+        // 이미 충분히 작으면 리사이즈하지 않음
+        if size.width <= maxDimension && size.height <= maxDimension {
+            return image
+        }
+
+        // 비율 유지하면서 리사이즈
+        let ratio = min(maxDimension / size.width, maxDimension / size.height)
+        let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
+
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
 }
 
