@@ -391,7 +391,7 @@ struct BackgroundCompositorView: View {
                     } else {
                         HStack {
                             Image(systemName: "arrow.down.circle.fill")
-                            Text("저장")
+                            Text("button.save".localized)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -404,7 +404,7 @@ struct BackgroundCompositorView: View {
                 }) {
                     HStack {
                         Image(systemName: "arrow.clockwise")
-                        Text("다시 만들기")
+                        Text("button.recreate".localized)
                     }
                     .frame(maxWidth: .infinity)
                 }

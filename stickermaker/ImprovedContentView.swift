@@ -403,7 +403,7 @@ struct VideoCaptureView: View {
                 }
 
                 VStack(alignment: .leading, spacing: Spacing.md) {
-                    Text("프레임 선택")
+                    Text("video_frame.select".localized)
                         .font(.appHeadline)
                         .padding(.horizontal, Spacing.md)
 
@@ -444,7 +444,7 @@ struct VideoCaptureView: View {
                 }) {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
-                        Text("이 프레임으로 스티커 만들기")
+                        Text("video_frame.create_sticker".localized)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -454,11 +454,11 @@ struct VideoCaptureView: View {
                 Spacer()
             }
             .padding(.vertical, Spacing.md)
-            .navigationTitle("비디오 프레임 선택")
+            .navigationTitle("video_frame.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("취소") {
+                    Button("button.cancel".localized) {
                         viewModel.reset()
                         dismiss()
                     }

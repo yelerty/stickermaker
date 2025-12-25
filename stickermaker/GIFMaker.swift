@@ -474,7 +474,7 @@ struct GIFMakerView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "scissors")
                             .foregroundStyle(.tint)
-                        Text("배경 제거")
+                        Text("option.remove_background".localized)
                             .font(.subheadline)
                             .fontWeight(.medium)
                     }
@@ -485,10 +485,10 @@ struct GIFMakerView: View {
 
                 // 프레임 속도
                 HStack {
-                    Text("프레임 속도")
+                    Text("gif.frame_speed".localized)
                         .font(.subheadline)
                     Spacer()
-                    Text("\(String(format: "%.1f", viewModel.frameDelay))초")
+                    Text("\(String(format: "%.1f", viewModel.frameDelay))" + "gif.seconds".localized)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

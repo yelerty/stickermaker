@@ -608,7 +608,7 @@ struct VideoToGIFView: View {
                                 .font(.caption)
                         }
 
-                        Text("선택된 구간: \(formatTime(viewModel.endTime - viewModel.startTime))")
+                        Text(String(format: "video_gif.selected_duration".localized, formatTime(viewModel.endTime - viewModel.startTime)))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -669,7 +669,7 @@ struct VideoToGIFView: View {
 
                 VStack(spacing: 15) {
                     HStack {
-                        Text("시작")
+                        Text("video_gif.start".localized)
                             .frame(width: 60, alignment: .leading)
                         Slider(value: $viewModel.startTime, in: 0...max(0, viewModel.endTime - 0.1))
                             .onChange(of: viewModel.startTime) { oldValue, newValue in
@@ -683,7 +683,7 @@ struct VideoToGIFView: View {
                     }
 
                     HStack {
-                        Text("종료")
+                        Text("video_gif.end".localized)
                             .frame(width: 60, alignment: .leading)
                         Slider(value: $viewModel.endTime, in: min(viewModel.startTime + 0.1, viewModel.duration)...viewModel.duration)
                         Text(formatTime(viewModel.endTime))
@@ -691,7 +691,7 @@ struct VideoToGIFView: View {
                             .font(.caption)
                     }
 
-                    Text("선택된 구간: \(formatTime(viewModel.endTime - viewModel.startTime))")
+                    Text(String(format: "video_gif.selected_duration".localized, formatTime(viewModel.endTime - viewModel.startTime)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -724,7 +724,7 @@ struct VideoToGIFView: View {
             ) {
                 HStack {
                     Image(systemName: "arrow.triangle.2.circlepath.video")
-                    Text("다른 비디오 선택")
+                    Text("video_gif.select_other".localized)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -740,8 +740,8 @@ struct VideoToGIFView: View {
             VStack {
                 EmptyStateView(
                     icon: "video.badge.waveform",
-                    title: "비디오로 GIF 만들기",
-                    message: "비디오의 원하는 구간을\n선택하여 GIF로 변환합니다"
+                    title: "video_gif.empty.title".localized,
+                    message: "video_gif.empty.message".localized
                 )
             }
             .frame(width: geometry.size.width * 0.35)
@@ -783,7 +783,7 @@ struct VideoToGIFView: View {
                     .font(.title)
                     .bold()
 
-                Text("비디오의 원하는 구간을\n선택하여 GIF로 변환합니다")
+                Text("video_gif.empty.message".localized)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -836,7 +836,7 @@ struct VideoToGIFView: View {
 
             Slider(value: $viewModel.frameDelay, in: 0.03...0.5, step: 0.01)
 
-            Text("총 재생시간: \(String(format: "%.1f", Double(viewModel.frameRate) * viewModel.frameDelay))초")
+            Text(String(format: "video_gif.total_duration".localized, Double(viewModel.frameRate) * viewModel.frameDelay))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
