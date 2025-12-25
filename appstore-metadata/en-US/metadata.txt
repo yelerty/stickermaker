@@ -1,0 +1,171 @@
+APP STORE METADATA - ENGLISH
+================================
+
+APP NAME (30 characters max)
+----------------------------
+Sticker Maker - GIF Creator
+
+
+SUBTITLE (30 characters max)
+----------------------------
+Stickers & GIFs Made Easy
+
+
+PROMOTIONAL TEXT (170 characters max)
+--------------------------------------
+Transform your photos into amazing stickers and GIFs! Remove backgrounds instantly, create animations, and share your creations. 100% private - all processing on device.
+
+
+DESCRIPTION (4000 characters max)
+----------------------------------
+Create stunning stickers and animated GIFs from your photos and videos with Sticker Maker! Perfect for expressing yourself in messages, social media, and more.
+
+✨ KEY FEATURES
+
+🎨 INSTANT BACKGROUND REMOVAL
+• AI-powered background removal using Vision Framework
+• Create transparent PNG stickers with one tap
+• Professional results in seconds
+
+📸 PHOTO TO GIF
+• Combine up to 10 photos into animated GIFs
+• Adjust frame speed for perfect timing
+• Optional transparent backgrounds
+• Create fun animations from your photo series
+
+🎬 VIDEO TO GIF
+• Convert any video clip into a GIF
+• Select specific sections of your video
+• Adjust frame count (5-30 frames) for smooth animations
+• Control frame delay (0.03-0.5 seconds)
+• Choose aspect ratios: Original, Square, Instagram Stories (9:16), Instagram Posts (4:5)
+• Add scale animations for dynamic effects
+
+🖼️ BACKGROUND COMPOSITOR
+• Replace backgrounds with custom images
+• Perfect for creative photo compositions
+• Adjust person size and position
+• Create professional-looking photos
+
+📦 STICKER PACK MANAGER
+• Organize your creations into collections
+• Easy management and editing
+• Share entire sticker packs
+
+🎨 IMAGE EDITOR
+• Fine-tune your stickers with built-in tools
+• Adjust brightness, contrast, and saturation
+• Apply beautiful filters (Noir, Chrome, Fade, Instant, Mono, Tonal)
+• Add text and emojis
+• Rotate and resize
+
+🌓 DARK MODE SUPPORT
+• Beautiful dark theme for comfortable viewing
+• Automatically adapts to system settings
+
+🌍 MULTI-LANGUAGE SUPPORT
+• Full support for English and Korean
+• Automatically matches your device language
+
+🔒 YOUR PRIVACY MATTERS
+• Zero data collection - we don't collect ANY data
+• No tracking or analytics
+• 100% offline processing on your device
+• Your photos never leave your phone
+• No user accounts or registration required
+• Open source for transparency
+
+⚡ PERFECT FOR
+• Creating custom stickers for messaging apps
+• Making animated memes and reactions
+• Social media content creation
+• Digital art and creative projects
+• Gift ideas and personalized content
+
+🎯 REQUIREMENTS
+• iOS 17.0 or later
+• Works on all iPhone and iPad models
+
+📱 HOW IT WORKS
+1. Select a photo or video
+2. Choose your creation type (Sticker, GIF, or Background Composite)
+3. Let AI automatically remove backgrounds
+4. Customize with built-in editing tools
+5. Save to your photo library and share!
+
+All processing happens instantly on your device using Apple's powerful Vision framework and CoreImage technologies. No internet connection required!
+
+Download Sticker Maker today and unleash your creativity! 🎨✨
+
+
+KEYWORDS (100 characters max, comma-separated)
+----------------------------------------------
+sticker,gif,background,remover,photo,editor,animation,meme,creator,transparent
+
+
+SUPPORT URL
+-----------
+https://yelerty.github.io/stickermaker/support.html
+
+
+MARKETING URL
+-------------
+https://yelerty.github.io/stickermaker/
+
+
+PRIVACY POLICY URL
+------------------
+https://yelerty.github.io/stickermaker/privacy-policy.html
+
+
+COPYRIGHT
+---------
+2024 Sticker Maker
+
+
+WHAT'S NEW IN VERSION 1.0
+--------------------------
+Welcome to Sticker Maker!
+
+✨ Create amazing stickers with AI-powered background removal
+📸 Make animated GIFs from photos and videos
+🎨 Edit and customize with powerful tools
+🖼️ Compose images with custom backgrounds
+🌓 Dark mode support
+🌍 English and Korean language support
+🔒 100% private - all processing on your device
+
+Download now and start creating! 🚀
+
+
+CATEGORY
+--------
+Primary: Photo & Video
+Secondary: Graphics & Design
+
+
+AGE RATING
+----------
+4+ (No objectionable content)
+
+
+REVIEW NOTES
+------------
+Thank you for reviewing Sticker Maker!
+
+This app uses on-device AI (Vision Framework) for background removal. No data is collected or transmitted. All processing happens locally.
+
+Test Account: Not required (no login/account system)
+
+To test features:
+1. Grant photo library permission when prompted
+2. Try "Sticker" tab - select a photo, background auto-removed
+3. Try "Photo GIF" tab - select 2-10 photos to create GIF
+4. Try "Video GIF" tab - select video, choose section, create GIF
+5. Try "Background" tab - select person photo + background photo
+
+The app works 100% offline. Privacy policy, terms, and support pages are hosted on GitHub Pages as documented in the repository.
+
+App Store links in documentation pages are placeholders and will be updated after approval.
+
+Thank you!
