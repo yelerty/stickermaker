@@ -28,6 +28,8 @@ class BackgroundCompositorViewModel: ObservableObject {
     @Published var personOffsetXPercent: Double = 0.0  // -50% ~ 50%
     @Published var personOffsetYPercent: Double = 0.0  // -50% ~ 50%
 
+    private let imageProcessingService = ImageProcessingService.shared
+
     func loadPersonImage() async {
         guard let item = selectedPersonItem else { return }
 
@@ -43,11 +45,11 @@ class BackgroundCompositorViewModel: ObservableObject {
             }
 
             // 메모리 절약을 위해 이미지 리사이즈 (최대 2000px)
-            let resizedImage = resizeImage(image, maxDimension: 2000)
+            let resizedImage = imageProcessingService.resizeImage(image, maxDimension: 2000)
             personImage = resizedImage
 
             // 배경 제거
-            let processed = try await removeBackground(from: resizedImage)
+            let processed = try await imageProcessingService.removeBackground(from: resizedImage)
             personWithoutBg = processed
 
             // 배경 이미지가 있으면 자동으로 합성
@@ -72,7 +74,7 @@ class BackgroundCompositorViewModel: ObservableObject {
             }
 
             // 메모리 절약을 위해 이미지 리사이즈 (최대 2000px)
-            let resizedImage = resizeImage(image, maxDimension: 2000)
+            let resizedImage = imageProcessingService.resizeImage(image, maxDimension: 2000)
             backgroundImage = resizedImage
 
             // 사람 이미지가 있으면 자동으로 합성
@@ -82,68 +84,6 @@ class BackgroundCompositorViewModel: ObservableObject {
         } catch {
             errorMessage = "배경 이미지 로드 실패: \(error.localizedDescription)"
         }
-    }
-
-    private func removeBackground(from image: UIImage) async throws -> UIImage {
-        return try await withCheckedThrowingContinuation { continuation in
-            let request = VNGenerateForegroundInstanceMaskRequest { request, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-
-                guard let result = request.results?.first as? VNInstanceMaskObservation else {
-                    continuation.resume(throwing: NSError(domain: "BackgroundCompositor", code: 2, userInfo: [NSLocalizedDescriptionKey: "마스크 생성 실패"]))
-                    return
-                }
-
-                do {
-                    let maskedImage = try self.generateMaskedImage(from: image, using: result)
-                    continuation.resume(returning: maskedImage)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-
-            guard let cgImage = image.cgImage else {
-                continuation.resume(throwing: NSError(domain: "BackgroundCompositor", code: 1, userInfo: [NSLocalizedDescriptionKey: "CGImage 변환 실패"]))
-                return
-            }
-
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            do {
-                try handler.perform([request])
-            } catch {
-                continuation.resume(throwing: error)
-            }
-        }
-    }
-
-    private func generateMaskedImage(from image: UIImage, using observation: VNInstanceMaskObservation) throws -> UIImage {
-        guard let cgImage = image.cgImage else {
-            throw NSError(domain: "BackgroundCompositor", code: 1, userInfo: [NSLocalizedDescriptionKey: "CGImage 변환 실패"])
-        }
-
-        let maskPixelBuffer = try observation.generateScaledMaskForImage(forInstances: observation.allInstances, from: VNImageRequestHandler(cgImage: cgImage))
-
-        let ciImage = CIImage(cgImage: cgImage)
-        let maskCIImage = CIImage(cvPixelBuffer: maskPixelBuffer)
-
-        let filter = CIFilter.blendWithMask()
-        filter.inputImage = ciImage
-        filter.backgroundImage = CIImage.empty()
-        filter.maskImage = maskCIImage
-
-        guard let outputImage = filter.outputImage else {
-            throw NSError(domain: "BackgroundCompositor", code: 3, userInfo: [NSLocalizedDescriptionKey: "필터 적용 실패"])
-        }
-
-        let context = CIContext()
-        guard let outputCGImage = context.createCGImage(outputImage, from: outputImage.extent) else {
-            throw NSError(domain: "BackgroundCompositor", code: 4, userInfo: [NSLocalizedDescriptionKey: "이미지 생성 실패"])
-        }
-
-        return UIImage(cgImage: outputCGImage)
     }
 
     func composeImages() {
@@ -227,25 +167,6 @@ class BackgroundCompositorViewModel: ObservableObject {
         personOffsetYPercent = 0.0
         errorMessage = nil
     }
-
-    // 메모리 절약을 위한 이미지 리사이즈
-    private func resizeImage(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
-        let size = image.size
-
-        // 이미 충분히 작으면 리사이즈하지 않음
-        if size.width <= maxDimension && size.height <= maxDimension {
-            return image
-        }
-
-        // 비율 유지하면서 리사이즈
-        let ratio = min(maxDimension / size.width, maxDimension / size.height)
-        let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
-
-        let renderer = UIGraphicsImageRenderer(size: newSize)
-        return renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: newSize))
-        }
-    }
 }
 
 struct BackgroundCompositorView: View {
@@ -285,17 +206,17 @@ struct BackgroundCompositorView: View {
                 }
                 .padding(.vertical, Spacing.md)
             }
-            .navigationTitle("배경 합성")
+            .navigationTitle("compositor.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     ThemeToggleButton()
                 }
             }
-            .alert("저장 완료", isPresented: $showSaveAlert) {
-                Button("확인", role: .cancel) { }
+            .alert("message.saved".localized, isPresented: $showSaveAlert) {
+                Button("button.ok".localized, role: .cancel) { }
             } message: {
-                Text("합성된 이미지가 사진 라이브러리에 저장되었습니다.")
+                Text("compositor.saved.message".localized)
             }
         }
         .onChange(of: viewModel.selectedPersonItem) { _, _ in
@@ -327,7 +248,7 @@ struct BackgroundCompositorView: View {
                 CardView {
                     VStack(spacing: Spacing.md) {
                         CustomSlider(
-                            title: "사람 크기",
+                            title: "compositor.person_size".localized,
                             value: $viewModel.personScale,
                             range: 0.3...2.0,
                             step: 0.1,
@@ -338,7 +259,7 @@ struct BackgroundCompositorView: View {
                         }
 
                         CustomSlider(
-                            title: "가로 위치",
+                            title: "compositor.horizontal_position".localized,
                             value: $viewModel.personOffsetXPercent,
                             range: -50...50,
                             step: 1,
@@ -349,7 +270,7 @@ struct BackgroundCompositorView: View {
                         }
 
                         CustomSlider(
-                            title: "세로 위치",
+                            title: "compositor.vertical_position".localized,
                             value: $viewModel.personOffsetYPercent,
                             range: -50...50,
                             step: 1,
@@ -377,7 +298,7 @@ struct BackgroundCompositorView: View {
                         } else {
                             HStack {
                                 Image(systemName: "arrow.down.circle.fill")
-                                Text("저장")
+                                Text("button.save".localized)
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -390,7 +311,7 @@ struct BackgroundCompositorView: View {
                     }) {
                         HStack {
                             Image(systemName: "arrow.clockwise")
-                            Text("다시 만들기")
+                            Text("button.recreate".localized)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -503,8 +424,8 @@ struct BackgroundCompositorView: View {
             VStack {
                 EmptyStateView(
                     icon: "photo.stack",
-                    title: "배경 합성",
-                    message: "사람 사진과 배경 사진을\n선택하여 합성하세요"
+                    title: "compositor.title".localized,
+                    message: "compositor.empty.message".localized
                 )
 
                 if isProcessing {
@@ -512,7 +433,7 @@ struct BackgroundCompositorView: View {
                         ProgressView()
                             .scaleEffect(1.5)
                             .tint(Color.appPrimary)
-                        Text("배경 제거 중...")
+                        Text("compositor.processing".localized)
                             .font(.appBody)
                             .foregroundColor(.secondary)
                     }
@@ -526,7 +447,7 @@ struct BackgroundCompositorView: View {
             VStack(spacing: Spacing.md) {
                 // 사람 이미지 선택
                 VStack(spacing: Spacing.sm) {
-                    Text("1. 사람 사진 선택")
+                    Text("compositor.step1".localized)
                         .font(.appSubheadline)
                         .foregroundColor(.secondary)
 
@@ -545,7 +466,7 @@ struct BackgroundCompositorView: View {
 
                 // 배경 이미지 선택
                 VStack(spacing: Spacing.sm) {
-                    Text("2. 배경 사진 선택")
+                    Text("compositor.step2".localized)
                         .font(.appSubheadline)
                         .foregroundColor(.secondary)
 
@@ -583,7 +504,7 @@ struct BackgroundCompositorView: View {
             VStack(spacing: Spacing.md) {
                 // 사람 이미지 선택
                 VStack(spacing: Spacing.sm) {
-                    Text("1. 사람 사진 선택")
+                    Text("compositor.step1".localized)
                         .font(.appSubheadline)
                         .foregroundColor(.secondary)
 
@@ -602,7 +523,7 @@ struct BackgroundCompositorView: View {
 
                 // 배경 이미지 선택
                 VStack(spacing: Spacing.sm) {
-                    Text("2. 배경 사진 선택")
+                    Text("compositor.step2".localized)
                         .font(.appSubheadline)
                         .foregroundColor(.secondary)
 
@@ -626,7 +547,7 @@ struct BackgroundCompositorView: View {
                     ProgressView()
                         .scaleEffect(1.5)
                         .tint(Color.appPrimary)
-                    Text("배경 제거 중...")
+                    Text("compositor.processing".localized)
                         .font(.appBody)
                         .foregroundColor(.secondary)
                 }

@@ -89,6 +89,17 @@ xcodebuild -project stickermaker.xcodeproj -scheme stickermaker -configuration D
 - **사진 라이브러리 접근**: 사진 및 비디오 불러오기
 - **사진 라이브러리 저장**: 생성한 스티커와 GIF 저장
 
+## 📄 Documentation
+
+This repository includes documentation pages for App Store submission:
+
+- **[Privacy Policy](docs/privacy-policy.html)** - Complete privacy policy explaining our zero data collection approach
+- **[Terms of Service](docs/terms-of-service.html)** - Terms and conditions for using the app
+- **[Support](docs/support.html)** - FAQ, troubleshooting guide, and contact information
+- **[Landing Page](docs/index.html)** - Main promotional page for the app
+
+These pages can be hosted via GitHub Pages for App Store review requirements.
+
 ## 🤝 기여
 
 기여는 언제나 환영합니다!

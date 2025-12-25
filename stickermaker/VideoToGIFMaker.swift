@@ -16,17 +16,17 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 import Combine
 
-enum AspectRatio: String, CaseIterable, Identifiable {
-    case original = "원본"
-    case square = "정방형 (1:1)"
-    case vertical_9_16 = "9:16"
-    case vertical_4_5 = "4:5"
-    case vertical_5_7 = "5:7"
-    case vertical_3_4 = "3:4"
-    case vertical_3_5 = "3:5"
-    case vertical_2_3 = "2:3"
+enum AspectRatio: CaseIterable, Identifiable {
+    case original
+    case square
+    case vertical_9_16
+    case vertical_4_5
+    case vertical_5_7
+    case vertical_3_4
+    case vertical_3_5
+    case vertical_2_3
 
-    var id: String { rawValue }
+    var id: String { localizedName }
 
     var localizedName: String {
         switch self {
@@ -55,14 +55,24 @@ enum AspectRatio: String, CaseIterable, Identifiable {
     }
 }
 
-enum ScaleAnimation: String, CaseIterable, Identifiable {
-    case none = "없음"
-    case zoomInOut = "작아졌다 커지기"
-    case zoomIn = "계속 작아지기"
-    case zoomOut = "계속 커지기"
-    case pulse = "작은 상태에서 30% 커지기"
+enum ScaleAnimation: CaseIterable, Identifiable {
+    case none
+    case zoomInOut
+    case zoomIn
+    case zoomOut
+    case pulse
 
-    var id: String { rawValue }
+    var id: String { localizedName }
+
+    var localizedName: String {
+        switch self {
+        case .none: return "animation.none".localized
+        case .zoomInOut: return "animation.zoom_in_out".localized
+        case .zoomIn: return "animation.zoom_in".localized
+        case .zoomOut: return "animation.zoom_out".localized
+        case .pulse: return "animation.pulse".localized
+        }
+    }
 
     func scaleForFrame(_ frameIndex: Int, totalFrames: Int) -> CGFloat {
         let progress = CGFloat(frameIndex) / CGFloat(max(totalFrames - 1, 1))
@@ -111,6 +121,7 @@ class VideoToGIFViewModel: ObservableObject {
 
     private var asset: AVAsset?
     private var isCancelled = false
+    private let imageProcessingService = ImageProcessingService.shared
 
     func loadVideo() async {
         guard let videoItem = selectedVideoItem else { return }
@@ -275,13 +286,13 @@ class VideoToGIFViewModel: ObservableObject {
 
                 // 비율에 맞게 이미지 크롭
                 if aspectRatio != .original {
-                    image = cropToAspectRatio(image, aspectRatio: aspectRatio)
+                    image = imageProcessingService.cropToAspectRatio(image, aspectRatio: aspectRatio)
                 }
 
                 // 스케일 애니메이션 적용
                 if scaleAnimation != .none {
                     let scale = scaleAnimation.scaleForFrame(i, totalFrames: frameRate)
-                    image = scaleImage(image, scale: scale)
+                    image = imageProcessingService.scaleImage(image, scale: scale)
                 }
 
                 frames.append(image)
@@ -291,67 +302,6 @@ class VideoToGIFViewModel: ObservableObject {
         }
 
         return frames
-    }
-
-    private func cropToAspectRatio(_ image: UIImage, aspectRatio: AspectRatio) -> UIImage {
-        guard let cgImage = image.cgImage,
-              let targetRatio = aspectRatio.ratio else { return image }
-
-        let originalWidth = CGFloat(cgImage.width)
-        let originalHeight = CGFloat(cgImage.height)
-        let originalRatio = originalWidth / originalHeight
-
-        var newWidth: CGFloat
-        var newHeight: CGFloat
-
-        if targetRatio < originalRatio {
-            // 타겟 비율이 더 좁음 (세로로 긴 경우) - 높이 기준
-            newHeight = originalHeight
-            newWidth = originalHeight * targetRatio
-        } else {
-            // 타겟 비율이 더 넓음 - 너비 기준
-            newWidth = originalWidth
-            newHeight = originalWidth / targetRatio
-        }
-
-        // 중앙을 기준으로 크롭
-        let x = (originalWidth - newWidth) / 2
-        let y = (originalHeight - newHeight) / 2
-
-        let cropRect = CGRect(x: x, y: y, width: newWidth, height: newHeight)
-
-        guard let croppedCGImage = cgImage.cropping(to: cropRect) else { return image }
-
-        return UIImage(cgImage: croppedCGImage, scale: image.scale, orientation: image.imageOrientation)
-    }
-
-    private func scaleImage(_ image: UIImage, scale: CGFloat) -> UIImage {
-        guard let cgImage = image.cgImage else { return image }
-
-        let originalWidth = CGFloat(cgImage.width)
-        let originalHeight = CGFloat(cgImage.height)
-
-        // 새로운 크기 계산
-        let newWidth = originalWidth * scale
-        let newHeight = originalHeight * scale
-
-        // 새 크기로 이미지를 그리되, 중앙에 배치하기 위해 캔버스는 원본 크기 유지
-        let canvasSize = CGSize(width: originalWidth, height: originalHeight)
-
-        let renderer = UIGraphicsImageRenderer(size: canvasSize)
-        let scaledImage = renderer.image { context in
-            // 투명 배경
-            context.cgContext.clear(CGRect(origin: .zero, size: canvasSize))
-
-            // 중앙에 스케일된 이미지 그리기
-            let x = (originalWidth - newWidth) / 2
-            let y = (originalHeight - newHeight) / 2
-            let rect = CGRect(x: x, y: y, width: newWidth, height: newHeight)
-
-            image.draw(in: rect)
-        }
-
-        return scaledImage
     }
 
     private func removeBackgroundFromFrames(_ frames: [UIImage]) async throws -> [UIImage] {
@@ -365,73 +315,11 @@ class VideoToGIFViewModel: ObservableObject {
             let progress = 0.3 + (Double(index + 1) / Double(frames.count)) * 0.4 // 30% ~ 70%
             await updateProgress(progress, "배경 제거 중 (\(index + 1)/\(frames.count))...")
 
-            let processed = try await removeBackground(from: frame)
+            let processed = try await imageProcessingService.removeBackground(from: frame)
             processedFrames.append(processed)
         }
 
         return processedFrames
-    }
-
-    private func removeBackground(from image: UIImage) async throws -> UIImage {
-        return try await withCheckedThrowingContinuation { continuation in
-            let request = VNGenerateForegroundInstanceMaskRequest { request, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-
-                guard let result = request.results?.first as? VNInstanceMaskObservation else {
-                    continuation.resume(returning: image)
-                    return
-                }
-
-                do {
-                    let maskedImage = try self.generateMaskedImage(from: image, using: result)
-                    continuation.resume(returning: maskedImage)
-                } catch {
-                    continuation.resume(returning: image)
-                }
-            }
-
-            guard let cgImage = image.cgImage else {
-                continuation.resume(returning: image)
-                return
-            }
-
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            do {
-                try handler.perform([request])
-            } catch {
-                continuation.resume(returning: image)
-            }
-        }
-    }
-
-    private func generateMaskedImage(from image: UIImage, using observation: VNInstanceMaskObservation) throws -> UIImage {
-        guard let cgImage = image.cgImage else {
-            throw NSError(domain: "VideoToGIF", code: 1, userInfo: nil)
-        }
-
-        let maskPixelBuffer = try observation.generateScaledMaskForImage(forInstances: observation.allInstances, from: VNImageRequestHandler(cgImage: cgImage))
-
-        let ciImage = CIImage(cgImage: cgImage)
-        let maskCIImage = CIImage(cvPixelBuffer: maskPixelBuffer)
-
-        let filter = CIFilter.blendWithMask()
-        filter.inputImage = ciImage
-        filter.backgroundImage = CIImage.empty()
-        filter.maskImage = maskCIImage
-
-        guard let outputImage = filter.outputImage else {
-            throw NSError(domain: "VideoToGIF", code: 2, userInfo: nil)
-        }
-
-        let context = CIContext()
-        guard let outputCGImage = context.createCGImage(outputImage, from: outputImage.extent) else {
-            throw NSError(domain: "VideoToGIF", code: 3, userInfo: nil)
-        }
-
-        return UIImage(cgImage: outputCGImage)
     }
 
     private func generateGIF(from frames: [UIImage]) async throws -> URL {
@@ -557,7 +445,7 @@ struct VideoToGIFView: View {
                                 }) {
                                     HStack {
                                         Image(systemName: "arrow.down.circle.fill")
-                                        Text("저장")
+                                        Text("button.save".localized)
                                     }
                                     .frame(maxWidth: .infinity)
                                 }
@@ -570,7 +458,7 @@ struct VideoToGIFView: View {
                                     }) {
                                         HStack {
                                             Image(systemName: "slider.horizontal.3")
-                                            Text("다시 편집")
+                                            Text("button.edit_again".localized)
                                         }
                                         .frame(maxWidth: .infinity)
                                     }
@@ -581,7 +469,7 @@ struct VideoToGIFView: View {
                                     }) {
                                         HStack {
                                             Image(systemName: "arrow.clockwise")
-                                            Text("새로 만들기")
+                                            Text("button.new".localized)
                                         }
                                         .frame(maxWidth: .infinity)
                                     }
@@ -612,7 +500,7 @@ struct VideoToGIFView: View {
                                     .foregroundColor(.primary)
                             }
 
-                            Text(viewModel.videoURL == nil ? "비디오 로딩 중..." : "잠시만 기다려주세요...")
+                            Text(viewModel.videoURL == nil ? "video_gif.loading".localized : "message.please_wait".localized)
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
@@ -622,7 +510,7 @@ struct VideoToGIFView: View {
                         }) {
                             HStack {
                                 Image(systemName: "xmark.circle.fill")
-                                Text("취소")
+                                Text("button.cancel".localized)
                             }
                             .frame(width: 200)
                         }
@@ -655,17 +543,17 @@ struct VideoToGIFView: View {
                         .padding()
                 }
             }
-            .navigationTitle("비디오 → GIF")
+            .navigationTitle("video_gif.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     ThemeToggleButton()
                 }
             }
-            .alert("저장 완료", isPresented: $showingSaveAlert) {
-                Button("확인", role: .cancel) { }
+            .alert("message.saved".localized, isPresented: $showingSaveAlert) {
+                Button("button.ok".localized, role: .cancel) { }
             } message: {
-                Text("GIF가 사진 라이브러리에 저장되었습니다.")
+                Text("gif.saved.message".localized)
             }
         }
         .onChange(of: viewModel.selectedVideoItem) { oldValue, newValue in
@@ -693,12 +581,12 @@ struct VideoToGIFView: View {
             VStack(spacing: 15) {
                 // 구간 설정
                 VStack(alignment: .leading, spacing: 15) {
-                    Text("GIF 구간 선택")
+                    Text("video_gif.select_section".localized)
                         .font(.headline)
 
                     VStack(spacing: 15) {
                         HStack {
-                            Text("시작")
+                            Text("video_gif.start".localized)
                                 .frame(width: 60, alignment: .leading)
                             Slider(value: $viewModel.startTime, in: 0...max(0, viewModel.endTime - 0.1))
                                 .onChange(of: viewModel.startTime) { oldValue, newValue in
@@ -712,7 +600,7 @@ struct VideoToGIFView: View {
                         }
 
                         HStack {
-                            Text("종료")
+                            Text("video_gif.end".localized)
                                 .frame(width: 60, alignment: .leading)
                             Slider(value: $viewModel.endTime, in: min(viewModel.startTime + 0.1, viewModel.duration)...viewModel.duration)
                             Text(formatTime(viewModel.endTime))
@@ -736,7 +624,7 @@ struct VideoToGIFView: View {
                 Button(action: {
                     viewModel.createGIF()
                 }) {
-                    Label("GIF 만들기", systemImage: "sparkles")
+                    Label("gif.create".localized, systemImage: "sparkles")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -750,7 +638,7 @@ struct VideoToGIFView: View {
                 ) {
                     HStack {
                         Image(systemName: "arrow.triangle.2.circlepath.video")
-                        Text("다른 비디오 선택")
+                        Text("video_gif.select_other".localized)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -775,7 +663,7 @@ struct VideoToGIFView: View {
 
             // 구간 설정
             VStack(alignment: .leading, spacing: 15) {
-                Text("GIF 구간 선택")
+                Text("video_gif.select_section".localized)
                     .font(.headline)
                     .padding(.horizontal)
 
@@ -821,7 +709,7 @@ struct VideoToGIFView: View {
             Button(action: {
                 viewModel.createGIF()
             }) {
-                Label("GIF 만들기", systemImage: "sparkles")
+                Label("gif.create".localized, systemImage: "sparkles")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -862,7 +750,7 @@ struct VideoToGIFView: View {
             // 오른쪽: 선택 버튼 (60%)
             VStack(spacing: Spacing.md) {
                 VStack(spacing: Spacing.sm) {
-                    Text("비디오 선택")
+                    Text("button.select_video".localized)
                         .font(.appSubheadline)
                         .foregroundColor(.secondary)
 
@@ -872,7 +760,7 @@ struct VideoToGIFView: View {
                     ) {
                         HStack {
                             Image(systemName: "video.badge.plus")
-                            Text("비디오 선택")
+                            Text("button.select_video".localized)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -891,7 +779,7 @@ struct VideoToGIFView: View {
                 .foregroundStyle(.tint)
 
             VStack(spacing: 10) {
-                Text("비디오로 GIF 만들기")
+                Text("video_gif.empty.title".localized)
                     .font(.title)
                     .bold()
 
@@ -905,7 +793,7 @@ struct VideoToGIFView: View {
                 selection: $viewModel.selectedVideoItem,
                 matching: .videos
             ) {
-                Label("비디오 선택", systemImage: "video.badge.plus")
+                Label("button.select_video".localized, systemImage: "video.badge.plus")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -921,7 +809,7 @@ struct VideoToGIFView: View {
         VStack(spacing: 15) {
             // 프레임 레이트
             HStack {
-                Text("프레임 수")
+                Text("video_gif.frame_count".localized)
                     .font(.subheadline)
                 Spacer()
                 Text("\(viewModel.frameRate) 프레임")
@@ -938,7 +826,7 @@ struct VideoToGIFView: View {
 
             // 프레임 간 딜레이
             HStack {
-                Text("프레임 간 딜레이")
+                Text("gif.frame_delay".localized)
                     .font(.subheadline)
                 Spacer()
                 Text("\(String(format: "%.2f", viewModel.frameDelay))초")
@@ -959,14 +847,14 @@ struct VideoToGIFView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "aspectratio")
                         .foregroundStyle(.tint)
-                    Text("프레임 비율")
+                    Text("option.aspect_ratio".localized)
                         .font(.subheadline)
                         .fontWeight(.medium)
                 }
 
-                Picker("프레임 비율", selection: $viewModel.aspectRatio) {
+                Picker("option.aspect_ratio".localized, selection: $viewModel.aspectRatio) {
                     ForEach(AspectRatio.allCases) { ratio in
-                        Text(ratio.rawValue).tag(ratio)
+                        Text(ratio.localizedName).tag(ratio)
                     }
                 }
                 .pickerStyle(.menu)
@@ -980,14 +868,14 @@ struct VideoToGIFView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.up.left.and.arrow.down.right")
                         .foregroundStyle(.tint)
-                    Text("크기 애니메이션")
+                    Text("animation.scale".localized)
                         .font(.subheadline)
                         .fontWeight(.medium)
                 }
 
-                Picker("크기 애니메이션", selection: $viewModel.scaleAnimation) {
+                Picker("animation.scale".localized, selection: $viewModel.scaleAnimation) {
                     ForEach(ScaleAnimation.allCases) { animation in
-                        Text(animation.rawValue).tag(animation)
+                        Text(animation.localizedName).tag(animation)
                     }
                 }
                 .pickerStyle(.menu)
@@ -1001,7 +889,7 @@ struct VideoToGIFView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "scissors")
                         .foregroundStyle(.tint)
-                    Text("배경 제거")
+                    Text("option.remove_background".localized)
                         .font(.subheadline)
                         .fontWeight(.medium)
                 }

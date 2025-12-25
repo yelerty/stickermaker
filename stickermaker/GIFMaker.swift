@@ -25,6 +25,8 @@ class GIFMakerViewModel: ObservableObject {
     @Published var frameDelay: Double = 0.2
     @Published var removeBackground = false
 
+    private let imageProcessingService = ImageProcessingService.shared
+
     func loadImages() async {
         isProcessing = true
         var loadedImages: [UIImage] = []
@@ -81,73 +83,11 @@ class GIFMakerViewModel: ObservableObject {
         var processedImages: [UIImage] = []
 
         for image in images {
-            let processedImage = try await removeBackground(from: image)
+            let processedImage = try await imageProcessingService.removeBackground(from: image)
             processedImages.append(processedImage)
         }
 
         return processedImages
-    }
-
-    private func removeBackground(from image: UIImage) async throws -> UIImage {
-        return try await withCheckedThrowingContinuation { continuation in
-            let request = VNGenerateForegroundInstanceMaskRequest { request, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-
-                guard let result = request.results?.first as? VNInstanceMaskObservation else {
-                    continuation.resume(throwing: NSError(domain: "GIFMaker", code: 2, userInfo: [NSLocalizedDescriptionKey: "마스크 생성 실패"]))
-                    return
-                }
-
-                do {
-                    let maskedImage = try self.generateMaskedImage(from: image, using: result)
-                    continuation.resume(returning: maskedImage)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-
-            guard let cgImage = image.cgImage else {
-                continuation.resume(throwing: NSError(domain: "GIFMaker", code: 1, userInfo: [NSLocalizedDescriptionKey: "CGImage 변환 실패"]))
-                return
-            }
-
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            do {
-                try handler.perform([request])
-            } catch {
-                continuation.resume(throwing: error)
-            }
-        }
-    }
-
-    private func generateMaskedImage(from image: UIImage, using observation: VNInstanceMaskObservation) throws -> UIImage {
-        guard let cgImage = image.cgImage else {
-            throw NSError(domain: "GIFMaker", code: 1, userInfo: [NSLocalizedDescriptionKey: "CGImage 변환 실패"])
-        }
-
-        let maskPixelBuffer = try observation.generateScaledMaskForImage(forInstances: observation.allInstances, from: VNImageRequestHandler(cgImage: cgImage))
-
-        let ciImage = CIImage(cgImage: cgImage)
-        let maskCIImage = CIImage(cvPixelBuffer: maskPixelBuffer)
-
-        let filter = CIFilter.blendWithMask()
-        filter.inputImage = ciImage
-        filter.backgroundImage = CIImage.empty()
-        filter.maskImage = maskCIImage
-
-        guard let outputImage = filter.outputImage else {
-            throw NSError(domain: "GIFMaker", code: 3, userInfo: [NSLocalizedDescriptionKey: "필터 적용 실패"])
-        }
-
-        let context = CIContext()
-        guard let outputCGImage = context.createCGImage(outputImage, from: outputImage.extent) else {
-            throw NSError(domain: "GIFMaker", code: 4, userInfo: [NSLocalizedDescriptionKey: "이미지 생성 실패"])
-        }
-
-        return UIImage(cgImage: outputCGImage)
     }
 
     private func generateGIF(from images: [UIImage], delay: Double) async throws -> URL {
@@ -249,7 +189,7 @@ struct GIFMakerView: View {
                                     HStack(spacing: 8) {
                                         Image(systemName: "scissors")
                                             .foregroundStyle(.tint)
-                                        Text("배경 제거")
+                                        Text("option.remove_background".localized)
                                             .font(.subheadline)
                                             .fontWeight(.medium)
                                     }
@@ -264,11 +204,11 @@ struct GIFMakerView: View {
 
                                 // 프레임 속도
                                 HStack {
-                                    Text("프레임 속도")
+                                    Text("gif.frame_speed".localized)
                                         .font(.subheadline)
                                         .fontWeight(.medium)
                                     Spacer()
-                                    Text("\(String(format: "%.1f", viewModel.frameDelay))초")
+                                    Text("\(String(format: "%.1f", viewModel.frameDelay))" + "gif.seconds".localized)
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -290,7 +230,7 @@ struct GIFMakerView: View {
                                     viewModel.saveGIF()
                                     showingSaveAlert = true
                                 }) {
-                                    Label("저장", systemImage: "square.and.arrow.down")
+                                    Label("button.save".localized, systemImage: "square.and.arrow.down")
                                         .frame(maxWidth: .infinity)
                                 }
                                 .buttonStyle(.borderedProminent)
@@ -298,7 +238,7 @@ struct GIFMakerView: View {
                                 Button(action: {
                                     viewModel.reset()
                                 }) {
-                                    Label("다시 만들기", systemImage: "arrow.clockwise")
+                                    Label("button.recreate".localized, systemImage: "arrow.clockwise")
                                         .frame(maxWidth: .infinity)
                                 }
                                 .buttonStyle(.bordered)
@@ -310,7 +250,7 @@ struct GIFMakerView: View {
                     VStack(spacing: 20) {
                         ProgressView()
                             .scaleEffect(1.5)
-                        Text("GIF 생성 중...")
+                        Text("gif.processing".localized)
                             .font(.headline)
                     }
                     .frame(maxHeight: .infinity)
@@ -329,7 +269,7 @@ struct GIFMakerView: View {
                                             .font(.system(size: 30))
                                             .foregroundStyle(.tint)
 
-                                        Text("사진 선택")
+                                        Text("button.select_photo".localized)
                                             .font(.subheadline)
 
                                         Text("\(viewModel.images.count)/10")
@@ -359,10 +299,10 @@ struct GIFMakerView: View {
                                             .font(.system(size: 50))
                                             .foregroundStyle(.tint)
 
-                                        Text("사진 선택 (\(viewModel.images.count)/10)")
+                                        Text(String(format: "gif.select_photos".localized, viewModel.images.count))
                                             .font(.headline)
 
-                                        Text("여러 장의 사진을 선택하세요")
+                                        Text("gif.select_multiple".localized)
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                     }
@@ -388,17 +328,17 @@ struct GIFMakerView: View {
                         .padding()
                 }
             }
-            .navigationTitle("GIF 만들기")
+            .navigationTitle("gif.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     ThemeToggleButton()
                 }
             }
-            .alert("저장 완료", isPresented: $showingSaveAlert) {
-                Button("확인", role: .cancel) { }
+            .alert("message.saved".localized, isPresented: $showingSaveAlert) {
+                Button("button.ok".localized, role: .cancel) { }
             } message: {
-                Text("GIF가 사진 라이브러리에 저장되었습니다.")
+                Text("gif.saved.message".localized)
             }
         }
         .onChange(of: viewModel.selectedItems) { oldValue, newValue in
@@ -414,7 +354,7 @@ struct GIFMakerView: View {
             VStack(alignment: .leading, spacing: 15) {
                 // 선택된 이미지 그리드
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("선택된 사진")
+                    Text("gif.selected_photos".localized)
                         .font(.headline)
 
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -450,7 +390,7 @@ struct GIFMakerView: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "scissors")
                                     .foregroundStyle(.tint)
-                                Text("배경 제거")
+                                Text("option.remove_background".localized)
                                     .font(.subheadline)
                                     .fontWeight(.medium)
                             }
@@ -463,7 +403,7 @@ struct GIFMakerView: View {
                         // 프레임 속도
                         VStack(spacing: 5) {
                             HStack {
-                                Text("프레임 속도")
+                                Text("gif.frame_speed".localized)
                                     .font(.subheadline)
                                 Spacer()
                                 Text("\(String(format: "%.1f", viewModel.frameDelay))초")
@@ -482,7 +422,7 @@ struct GIFMakerView: View {
                     Button(action: {
                         viewModel.createGIF()
                     }) {
-                        Label("GIF 만들기", systemImage: "sparkles")
+                        Label("gif.create".localized, systemImage: "sparkles")
                             .font(.headline)
                             .padding(.horizontal, 20)
                             .padding(.vertical, 15)
@@ -498,7 +438,7 @@ struct GIFMakerView: View {
         // 선택된 이미지 그리드
         if !viewModel.images.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                Text("선택된 사진")
+                Text("gif.selected_photos".localized)
                     .font(.headline)
                     .padding(.horizontal)
 

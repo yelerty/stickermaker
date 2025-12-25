@@ -12,7 +12,7 @@ import PhotosUI
 
 class StickerPackManager: ObservableObject {
     @Published var stickers: [StickerItem] = []
-    @Published var packName: String = "내 스티커팩"
+    @Published var packName: String = "pack.name".localized
 
     func addSticker(_ image: UIImage) {
         let sticker = StickerItem(image: image)
@@ -84,7 +84,7 @@ struct StickerPackView: View {
                             .font(.system(size: 60))
                             .foregroundStyle(.tint)
 
-                        Text("스티커를 추가해보세요")
+                        Text("pack.empty".localized)
                             .font(.headline)
                             .foregroundStyle(.secondary)
                     }
@@ -112,7 +112,7 @@ struct StickerPackView: View {
                             showingExportSheet = true
                         }
                     }) {
-                        Label("스티커팩 공유", systemImage: "square.and.arrow.up")
+                        Label("pack.share".localized, systemImage: "square.and.arrow.up")
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -121,7 +121,7 @@ struct StickerPackView: View {
                     .padding(.horizontal)
                 }
             }
-            .navigationTitle("스티커팩 관리")
+            .navigationTitle("pack.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -194,7 +194,7 @@ struct StickerPickerView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                         .padding()
 
-                    Button("스티커로 추가") {
+                    Button("pack.add_sticker".localized) {
                         onStickerCreated(processedImage)
                         dismiss()
                     }
@@ -210,17 +210,17 @@ struct StickerPickerView: View {
                         VStack(spacing: 15) {
                             Image(systemName: "photo.badge.plus")
                                 .font(.system(size: 60))
-                            Text("사진 선택")
+                            Text("button.select_photo".localized)
                                 .font(.headline)
                         }
                     }
                 }
             }
-            .navigationTitle("스티커 만들기")
+            .navigationTitle("pack.create_sticker".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("취소") {
+                    Button("button.cancel".localized) {
                         dismiss()
                     }
                 }

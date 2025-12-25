@@ -34,6 +34,8 @@ class StickerViewModel: ObservableObject {
     @Published var removeBackgroundEnabled = true
     @Published var aspectRatio: AspectRatio = .original
 
+    private let imageProcessingService = ImageProcessingService.shared
+
     func loadImage() async {
         guard let photoItem = selectedPhotoItem else { return }
 
@@ -49,7 +51,7 @@ class StickerViewModel: ObservableObject {
             // 비율 조정
             var processedImage = image
             if aspectRatio != .original {
-                processedImage = cropToAspectRatio(processedImage, aspectRatio: aspectRatio)
+                processedImage = imageProcessingService.cropToAspectRatio(processedImage, aspectRatio: aspectRatio)
             }
 
             // 배경 제거
@@ -68,7 +70,7 @@ class StickerViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            let processedImage = try await processImageWithVision(image)
+            let processedImage = try await imageProcessingService.removeBackground(from: image)
             self.processedImage = processedImage
         } catch {
             errorMessage = "배경 제거 실패: \(error.localizedDescription)"
@@ -77,68 +79,6 @@ class StickerViewModel: ObservableObject {
         }
 
         isProcessing = false
-    }
-
-    private func processImageWithVision(_ image: UIImage) async throws -> UIImage {
-        return try await withCheckedThrowingContinuation { continuation in
-            let request = VNGenerateForegroundInstanceMaskRequest { request, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-
-                guard let result = request.results?.first as? VNInstanceMaskObservation else {
-                    continuation.resume(throwing: NSError(domain: "StickerMaker", code: 2, userInfo: [NSLocalizedDescriptionKey: "마스크 생성 실패"]))
-                    return
-                }
-
-                do {
-                    let maskedImage = try self.generateMaskedImage(from: image, using: result)
-                    continuation.resume(returning: maskedImage)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-
-            guard let cgImage = image.cgImage else {
-                continuation.resume(throwing: NSError(domain: "StickerMaker", code: 1, userInfo: [NSLocalizedDescriptionKey: "CGImage 변환 실패"]))
-                return
-            }
-
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            do {
-                try handler.perform([request])
-            } catch {
-                continuation.resume(throwing: error)
-            }
-        }
-    }
-
-    private func generateMaskedImage(from image: UIImage, using observation: VNInstanceMaskObservation) throws -> UIImage {
-        guard let cgImage = image.cgImage else {
-            throw NSError(domain: "StickerMaker", code: 1, userInfo: [NSLocalizedDescriptionKey: "CGImage 변환 실패"])
-        }
-
-        let maskPixelBuffer = try observation.generateScaledMaskForImage(forInstances: observation.allInstances, from: VNImageRequestHandler(cgImage: cgImage))
-
-        let ciImage = CIImage(cgImage: cgImage)
-        let maskCIImage = CIImage(cvPixelBuffer: maskPixelBuffer)
-
-        let filter = CIFilter.blendWithMask()
-        filter.inputImage = ciImage
-        filter.backgroundImage = CIImage.empty()
-        filter.maskImage = maskCIImage
-
-        guard let outputImage = filter.outputImage else {
-            throw NSError(domain: "StickerMaker", code: 3, userInfo: [NSLocalizedDescriptionKey: "필터 적용 실패"])
-        }
-
-        let context = CIContext()
-        guard let outputCGImage = context.createCGImage(outputImage, from: outputImage.extent) else {
-            throw NSError(domain: "StickerMaker", code: 4, userInfo: [NSLocalizedDescriptionKey: "이미지 생성 실패"])
-        }
-
-        return UIImage(cgImage: outputCGImage)
     }
 
     func saveSticker() async {
@@ -167,38 +107,6 @@ class StickerViewModel: ObservableObject {
         }
 
         isSaving = false
-    }
-
-    private func cropToAspectRatio(_ image: UIImage, aspectRatio: AspectRatio) -> UIImage {
-        guard let cgImage = image.cgImage,
-              let targetRatio = aspectRatio.ratio else { return image }
-
-        let originalWidth = CGFloat(cgImage.width)
-        let originalHeight = CGFloat(cgImage.height)
-        let originalRatio = originalWidth / originalHeight
-
-        var newWidth: CGFloat
-        var newHeight: CGFloat
-
-        if targetRatio < originalRatio {
-            // 타겟 비율이 더 좁음 (세로로 긴 경우) - 높이 기준
-            newHeight = originalHeight
-            newWidth = originalHeight * targetRatio
-        } else {
-            // 타겟 비율이 더 넓음 - 너비 기준
-            newWidth = originalWidth
-            newHeight = originalWidth / targetRatio
-        }
-
-        // 중앙을 기준으로 크롭
-        let x = (originalWidth - newWidth) / 2
-        let y = (originalHeight - newHeight) / 2
-
-        let cropRect = CGRect(x: x, y: y, width: newWidth, height: newHeight)
-
-        guard let croppedCGImage = cgImage.cropping(to: cropRect) else { return image }
-
-        return UIImage(cgImage: croppedCGImage, scale: image.scale, orientation: image.imageOrientation)
     }
 
     func reset() {

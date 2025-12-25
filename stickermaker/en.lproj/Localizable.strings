@@ -3,105 +3,143 @@
   stickermaker
 */
 
-// Tab Titles
+// MARK: - Tab Bar
 "tab.sticker" = "Sticker";
 "tab.photo_gif" = "Photo GIF";
 "tab.video_gif" = "Video GIF";
 "tab.background" = "Background";
 "tab.sticker_pack" = "Sticker Pack";
 
-// Common
+// MARK: - Common Buttons
+"button.ok" = "OK";
+"button.cancel" = "Cancel";
+"button.save" = "Save";
+"button.edit" = "Edit";
+"button.apply" = "Apply";
+"button.reset" = "Reset";
+"button.add" = "Add";
 "button.select_photo" = "Select Photo";
 "button.select_video" = "Select Video";
-"button.save" = "Save";
-"button.share" = "Share";
-"button.reset" = "Reset";
-"button.edit" = "Edit";
-"button.cancel" = "Cancel";
-"button.ok" = "OK";
-"button.add" = "Add";
-"button.create" = "Create";
-"button.export" = "Export";
+"button.retry" = "Retry";
+"button.recreate" = "Recreate";
+"button.new" = "New";
+"button.edit_again" = "Edit Again";
 
-// Sticker Maker
+// MARK: - Common Messages
+"message.saved" = "Saved";
+"message.processing" = "Processing...";
+"message.loading" = "Loading...";
+"message.please_wait" = "Please wait...";
+
+// MARK: - Sticker Maker
 "sticker.title" = "Sticker Maker";
-"sticker.empty.title" = "Create Sticker";
-"sticker.empty.message" = "Select a photo or video\nto create a sticker";
 "sticker.processing" = "Removing background...";
 "sticker.saved" = "Saved";
 "sticker.saved.message" = "Sticker has been saved to your photo library.";
-"sticker.step.photo" = "1. Select Photo";
-"sticker.step.video" = "2. Select Video";
+"sticker.empty.title" = "Create Sticker";
+"sticker.empty.message" = "Select a photo to automatically\nremove the background";
+"sticker.step.photo" = "Create from Photo";
+"sticker.step.video" = "Create from Video";
 
-// Options
-"option.remove_background" = "Remove Background";
-"option.aspect_ratio" = "Aspect Ratio";
-"option.original" = "Original";
-"option.square" = "Square (1:1)";
-"option.portrait" = "Portrait (9:16)";
-"option.landscape" = "Landscape (16:9)";
-
-// GIF Maker
-"gif.title" = "Create GIF";
-"gif.empty.title" = "Create GIF from Photos";
-"gif.empty.message" = "Select multiple photos\nto create an animated GIF";
-"gif.photos_selected" = "%d photos selected";
-"gif.creating" = "Creating GIF...";
-"gif.created" = "GIF Created";
-"gif.created.message" = "GIF has been saved to your photo library.";
-"gif.speed" = "Speed";
-"gif.quality" = "Quality";
-
-// Video to GIF
-"video_gif.title" = "Video → GIF";
-"video_gif.empty.title" = "Video to GIF";
-"video_gif.empty.message" = "Select a video\nto convert to GIF";
-"video_gif.processing" = "Processing...";
-"video_gif.frame_selection" = "Frame Selection";
-"video_gif.start_time" = "Start Time";
-"video_gif.end_time" = "End Time";
-"video_gif.duration" = "Duration";
-"video_gif.frame_rate" = "Frame Rate";
-"video_gif.scale_animation" = "Scale Animation";
-"video_gif.scale.none" = "None";
-"video_gif.scale.zoom_in" = "Zoom In";
-"video_gif.scale.zoom_out" = "Zoom Out";
-
-// Background Compositor
-"bg.title" = "Background Composite";
-"bg.empty.title" = "Background Composite";
-"bg.empty.message" = "Select a person photo and\na background to composite";
-"bg.step.person" = "1. Person Photo";
-"bg.step.background" = "2. Background";
-"bg.processing" = "Removing background...";
-"bg.compositing" = "Compositing...";
-"bg.person_size" = "Person Size";
-"bg.person_position" = "Person Position";
-
-// Sticker Pack
-"pack.title" = "Sticker Pack Manager";
-"pack.name" = "Pack Name";
-"pack.name.default" = "My Sticker Pack";
-"pack.empty.title" = "Add stickers";
-"pack.add_sticker" = "Add as Sticker";
-"pack.create_sticker" = "Create Sticker";
-"pack.share_pack" = "Share Sticker Pack";
-"pack.export_failed" = "Failed to export sticker pack";
-
-// Image Editor
-"editor.title" = "Edit Image";
+// MARK: - Image Editor
+"editor.size_rotation" = "Size & Rotation";
+"editor.size" = "Size";
+"editor.rotation" = "Rotation";
+"editor.color_adjustment" = "Color Adjustment";
 "editor.brightness" = "Brightness";
 "editor.contrast" = "Contrast";
 "editor.saturation" = "Saturation";
-"editor.scale" = "Scale";
-"editor.rotation" = "Rotation";
-"editor.flip_horizontal" = "Flip Horizontal";
-"editor.flip_vertical" = "Flip Vertical";
+"editor.filter" = "Filter";
+"editor.text_emoji" = "Text & Emoji";
+"editor.add_text" = "Add Text";
+"editor.text" = "Text";
+"editor.text_input" = "Enter text";
+"editor.text_size" = "Size";
+"editor.color" = "Color";
+"editor.color_select" = "Select Color";
 
-// Errors
-"error.load_failed" = "Failed to load";
-"error.save_failed" = "Failed to save";
-"error.processing_failed" = "Processing failed";
-"error.no_image" = "Could not load image.";
-"error.no_video" = "Could not load video.";
-"error.cancelled" = "Operation was cancelled.";
+// MARK: - Filter Types
+"filter.none" = "Original";
+"filter.noir" = "Noir";
+"filter.chrome" = "Chrome";
+"filter.fade" = "Fade";
+"filter.instant" = "Instant";
+"filter.mono" = "Mono";
+"filter.tonal" = "Tonal";
+
+// MARK: - GIF Maker
+"gif.title" = "GIF Maker";
+"gif.processing" = "Creating GIF...";
+"gif.saved.message" = "GIF has been saved to your photo library.";
+"gif.select_photos" = "Select Photos (%d/10)";
+"gif.select_multiple" = "Select multiple photos";
+"gif.selected_photos" = "Selected Photos";
+"gif.create" = "Create GIF";
+"gif.frame_speed" = "Frame Speed";
+"gif.frame_delay" = "Frame Delay";
+"gif.seconds" = "sec";
+
+// MARK: - Video to GIF
+"video_gif.title" = "Video → GIF";
+"video_gif.loading" = "Loading video...";
+"video_gif.select_section" = "Select GIF Section";
+"video_gif.start" = "Start";
+"video_gif.end" = "End";
+"video_gif.selected_duration" = "Selected: %@";
+"video_gif.frame_count" = "Frame Count";
+"video_gif.frames" = "%d frames";
+"video_gif.total_duration" = "Total duration: %.1f sec";
+"video_gif.select_other" = "Select Other Video";
+"video_gif.empty.title" = "Create GIF from Video";
+"video_gif.empty.message" = "Select a section of your video\nto convert to GIF";
+"video_gif.progress.extracting" = "Extracting frames...";
+"video_gif.progress.removing_bg" = "Removing background (%d/%d)...";
+"video_gif.progress.creating" = "Creating GIF...";
+"video_gif.progress.complete" = "Complete!";
+"video_gif.progress.cancelled" = "Operation cancelled.";
+
+// MARK: - Aspect Ratio
+"option.aspect_ratio" = "Aspect Ratio";
+"option.original" = "Original";
+"option.square" = "Square (1:1)";
+
+// MARK: - Scale Animation
+"animation.scale" = "Scale Animation";
+"animation.none" = "None";
+"animation.zoom_in_out" = "Zoom In/Out";
+"animation.zoom_in" = "Zoom In";
+"animation.zoom_out" = "Zoom Out";
+"animation.pulse" = "Pulse (30%)";
+
+// MARK: - Background Compositor
+"compositor.title" = "Background Compositor";
+"compositor.person_size" = "Person Size";
+"compositor.times" = "x";
+"compositor.horizontal_position" = "Horizontal Position";
+"compositor.vertical_position" = "Vertical Position";
+"compositor.percent" = "%";
+"compositor.processing" = "Removing background...";
+"compositor.saved.message" = "Composed image has been saved to your photo library.";
+"compositor.step1" = "1. Select Person Photo";
+"compositor.step2" = "2. Select Background Photo";
+"compositor.person_selected" = "Person Selected";
+"compositor.person_select" = "Select Person";
+"compositor.background_selected" = "Background Selected";
+"compositor.background_select" = "Select Background";
+"compositor.empty.message" = "Select a person photo and\nbackground photo to composite";
+
+// MARK: - Sticker Pack
+"pack.title" = "Sticker Pack Manager";
+"pack.name" = "My Sticker Pack";
+"pack.empty" = "Add stickers to get started";
+"pack.share" = "Share Sticker Pack";
+"pack.create_sticker" = "Create Sticker";
+"pack.add_sticker" = "Add to Sticker Pack";
+
+// MARK: - Common Options
+"option.remove_background" = "Remove Background";
+
+// MARK: - Video Frame Selection
+"video_frame.title" = "Select Video Frame";
+"video_frame.select" = "Select Frame";
+"video_frame.create_sticker" = "Create Sticker with This Frame";

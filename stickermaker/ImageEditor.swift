@@ -50,10 +50,10 @@ struct ImageEditorView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     // 크기 및 회전
-                    GroupBox("크기 & 회전") {
+                    GroupBox("editor.size_rotation".localized) {
                         VStack(spacing: 15) {
                             HStack {
-                                Text("크기")
+                                Text("editor.size".localized)
                                     .frame(width: 60, alignment: .leading)
                                 Slider(value: $scale, in: 0.5...2.0)
                                 Text("\(Int(scale * 100))%")
@@ -61,7 +61,7 @@ struct ImageEditorView: View {
                             }
 
                             HStack {
-                                Text("회전")
+                                Text("editor.rotation".localized)
                                     .frame(width: 60, alignment: .leading)
                                 Slider(value: Binding(
                                     get: { rotation.degrees },
@@ -75,10 +75,10 @@ struct ImageEditorView: View {
                     }
 
                     // 색상 조정
-                    GroupBox("색상 조정") {
+                    GroupBox("editor.color_adjustment".localized) {
                         VStack(spacing: 15) {
                             HStack {
-                                Text("밝기")
+                                Text("editor.brightness".localized)
                                     .frame(width: 60, alignment: .leading)
                                 Slider(value: $brightness, in: -0.5...0.5)
                                 Text("\(Int(brightness * 100))")
@@ -86,7 +86,7 @@ struct ImageEditorView: View {
                             }
 
                             HStack {
-                                Text("대비")
+                                Text("editor.contrast".localized)
                                     .frame(width: 60, alignment: .leading)
                                 Slider(value: $contrast, in: 0.5...2.0)
                                 Text("\(Int(contrast * 100))%")
@@ -94,7 +94,7 @@ struct ImageEditorView: View {
                             }
 
                             HStack {
-                                Text("채도")
+                                Text("editor.saturation".localized)
                                     .frame(width: 60, alignment: .leading)
                                 Slider(value: $saturation, in: 0...2.0)
                                 Text("\(Int(saturation * 100))%")
@@ -105,7 +105,7 @@ struct ImageEditorView: View {
                     }
 
                     // 필터
-                    GroupBox("필터") {
+                    GroupBox("editor.filter".localized) {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
                                 ForEach(FilterType.allCases, id: \.self) { filter in
@@ -122,11 +122,11 @@ struct ImageEditorView: View {
                     }
 
                     // 텍스트/이모지 추가
-                    GroupBox("텍스트 & 이모지") {
+                    GroupBox("editor.text_emoji".localized) {
                         Button(action: {
                             showingTextEditor = true
                         }) {
-                            Label("텍스트 추가", systemImage: "textformat")
+                            Label("editor.add_text".localized, systemImage: "textformat")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
@@ -134,13 +134,13 @@ struct ImageEditorView: View {
 
                     // 액션 버튼
                     HStack(spacing: 12) {
-                        Button("초기화") {
+                        Button("button.reset".localized) {
                             resetEdits()
                         }
                         .buttonStyle(.bordered)
                         .frame(maxWidth: .infinity)
 
-                        Button("적용") {
+                        Button("button.apply".localized) {
                             applyAndSave()
                         }
                         .buttonStyle(.borderedProminent)
@@ -255,13 +255,25 @@ struct ImageEditorView: View {
 }
 
 enum FilterType: String, CaseIterable {
-    case none = "원본"
-    case noir = "누아르"
-    case chrome = "크롬"
-    case fade = "페이드"
-    case instant = "인스턴트"
-    case mono = "모노"
-    case tonal = "토널"
+    case none
+    case noir
+    case chrome
+    case fade
+    case instant
+    case mono
+    case tonal
+
+    var localizedName: String {
+        switch self {
+        case .none: return "filter.none".localized
+        case .noir: return "filter.noir".localized
+        case .chrome: return "filter.chrome".localized
+        case .fade: return "filter.fade".localized
+        case .instant: return "filter.instant".localized
+        case .mono: return "filter.mono".localized
+        case .tonal: return "filter.tonal".localized
+        }
+    }
 }
 
 struct FilterButton: View {
@@ -276,12 +288,12 @@ struct FilterButton: View {
                     .fill(isSelected ? Color.accentColor : Color.gray.opacity(0.3))
                     .frame(width: 50, height: 50)
                     .overlay {
-                        Text(filter.rawValue.prefix(1))
+                        Text(filter.localizedName.prefix(1))
                             .font(.headline)
                             .foregroundColor(.white)
                     }
 
-                Text(filter.rawValue)
+                Text(filter.localizedName)
                     .font(.caption)
                     .foregroundColor(isSelected ? .accentColor : .primary)
             }
@@ -308,32 +320,32 @@ struct TextEditorSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("텍스트") {
-                    TextField("텍스트 입력", text: $inputText)
+                Section("editor.text".localized) {
+                    TextField("editor.text_input".localized, text: $inputText)
                 }
 
-                Section("크기") {
+                Section("editor.text_size".localized) {
                     Slider(value: $fontSize, in: 20...80) {
-                        Text("크기")
+                        Text("editor.text_size".localized)
                     }
-                    Text("크기: \(Int(fontSize))")
+                    Text("editor.text_size".localized + ": \(Int(fontSize))")
                         .font(.system(size: fontSize))
                 }
 
-                Section("색상") {
-                    ColorPicker("색상 선택", selection: $selectedColor)
+                Section("editor.color".localized) {
+                    ColorPicker("editor.color_select".localized, selection: $selectedColor)
                 }
             }
-            .navigationTitle("텍스트 추가")
+            .navigationTitle("editor.add_text".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("취소") {
+                    Button("button.cancel".localized) {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("추가") {
+                    Button("button.add".localized) {
                         if !inputText.isEmpty {
                             textOverlays.append(TextOverlay(
                                 text: inputText,
