@@ -812,7 +812,7 @@ struct VideoToGIFView: View {
                 Text("video_gif.frame_count".localized)
                     .font(.subheadline)
                 Spacer()
-                Text("\(viewModel.frameRate) 프레임")
+                Text(String(format: "video_gif.frames".localized, viewModel.frameRate))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -829,7 +829,7 @@ struct VideoToGIFView: View {
                 Text("gif.frame_delay".localized)
                     .font(.subheadline)
                 Spacer()
-                Text("\(String(format: "%.2f", viewModel.frameDelay))초")
+                Text("\(String(format: "%.2f", viewModel.frameDelay))" + "gif.seconds".localized)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
