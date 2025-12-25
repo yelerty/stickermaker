@@ -57,7 +57,7 @@ class BackgroundCompositorViewModel: ObservableObject {
                 composeImages()
             }
         } catch {
-            errorMessage = "사람 이미지 로드 실패: \(error.localizedDescription)"
+            errorMessage = "error.person_image_load_failed".localized + ": \(error.localizedDescription)"
         }
 
         isProcessing = false
@@ -69,7 +69,7 @@ class BackgroundCompositorViewModel: ObservableObject {
         do {
             guard let data = try await item.loadTransferable(type: Data.self),
                   let image = UIImage(data: data) else {
-                errorMessage = "배경 이미지를 불러올 수 없습니다."
+                errorMessage = "error.background_image_cannot_load".localized
                 return
             }
 
@@ -82,7 +82,7 @@ class BackgroundCompositorViewModel: ObservableObject {
                 composeImages()
             }
         } catch {
-            errorMessage = "배경 이미지 로드 실패: \(error.localizedDescription)"
+            errorMessage = "error.background_image_load_failed".localized + ": \(error.localizedDescription)"
         }
     }
 
@@ -339,11 +339,11 @@ struct BackgroundCompositorView: View {
             CardView {
                 VStack(spacing: Spacing.md) {
                     CustomSlider(
-                        title: "사람 크기",
+                        title: "compositor.person_size".localized,
                         value: $viewModel.personScale,
                         range: 0.3...2.0,
                         step: 0.1,
-                        unit: "배"
+                        unit: "compositor.times".localized
                     )
                     .onChange(of: viewModel.personScale) { _, _ in
                         viewModel.composeImages()
@@ -457,7 +457,7 @@ struct BackgroundCompositorView: View {
                     ) {
                         HStack {
                             Image(systemName: hasPersonImage ? "checkmark.circle.fill" : "person.crop.circle")
-                            Text(hasPersonImage ? "사람 선택됨" : "사람 선택")
+                            Text(hasPersonImage ? "compositor.person_selected".localized : "compositor.person_select".localized)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -476,7 +476,7 @@ struct BackgroundCompositorView: View {
                     ) {
                         HStack {
                             Image(systemName: hasBackgroundImage ? "checkmark.circle.fill" : "photo")
-                            Text(hasBackgroundImage ? "배경 선택됨" : "배경 선택")
+                            Text(hasBackgroundImage ? "compositor.background_selected".localized : "compositor.background_select".localized)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -497,8 +497,8 @@ struct BackgroundCompositorView: View {
             // 이미지 선택 화면
             EmptyStateView(
                 icon: "photo.stack",
-                title: "배경 합성",
-                message: "사람 사진과 배경 사진을\n선택하여 합성하세요"
+                title: "compositor.title".localized,
+                message: "compositor.empty.message".localized
             )
 
             VStack(spacing: Spacing.md) {
@@ -514,7 +514,7 @@ struct BackgroundCompositorView: View {
                     ) {
                         HStack {
                             Image(systemName: hasPersonImage ? "checkmark.circle.fill" : "person.crop.circle")
-                            Text(hasPersonImage ? "사람 선택됨" : "사람 선택")
+                            Text(hasPersonImage ? "compositor.person_selected".localized : "compositor.person_select".localized)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -533,7 +533,7 @@ struct BackgroundCompositorView: View {
                     ) {
                         HStack {
                             Image(systemName: hasBackgroundImage ? "checkmark.circle.fill" : "photo")
-                            Text(hasBackgroundImage ? "배경 선택됨" : "배경 선택")
+                            Text(hasBackgroundImage ? "compositor.background_selected".localized : "compositor.background_select".localized)
                         }
                         .frame(maxWidth: .infinity)
                     }

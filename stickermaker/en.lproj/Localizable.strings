@@ -143,3 +143,8 @@
 "video_frame.title" = "Select Video Frame";
 "video_frame.select" = "Select Frame";
 "video_frame.create_sticker" = "Create Sticker with This Frame";
+
+// MARK: - Error Messages
+"error.person_image_load_failed" = "Failed to load person image";
+"error.background_image_load_failed" = "Failed to load background image";
+"error.background_image_cannot_load" = "Cannot load background image.";
